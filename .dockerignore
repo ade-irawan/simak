@@ -1,0 +1,12 @@
+# Konteks build backend = akar repositori; buang yang tidak dibutuhkan image.
+.git
+.env
+.env.*
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+frontend
+docs
+backend/tests

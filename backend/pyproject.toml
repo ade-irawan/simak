@@ -1,0 +1,63 @@
+[project]
+name = "simak-backend"
+version = "0.1.0"
+description = "SIMAK — Sistem Informasi Manajemen Akreditasi (backend)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30",
+    "psycopg[binary]>=3.2",          # hanya untuk Alembic & CLI (sinkron)
+    "alembic>=1.14",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.6",
+    "email-validator>=2.2",
+    "argon2-cffi>=23.1",
+    "pyjwt>=2.10",
+    "cryptography>=43",
+    "httpx>=0.28",
+    "minio>=7.2",
+    "celery[redis]>=5.4",
+    "redis>=5.2",
+    "openpyxl>=3.1",
+    "python-docx>=1.1",
+    "weasyprint>=63",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.17",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+markers = [
+    "db: membutuhkan PostgreSQL sungguhan (TEST_DATABASE_URL)",
+]
+
+[tool.ruff]
+line-length = 140
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+ignore = [
+    "B008",   # Depends() sebagai nilai bawaan adalah idiom FastAPI
+    "E501",   # panjang baris tidak dipaksakan (kode berbahasa Indonesia cenderung lebih panjang)
+    "E741",
+]

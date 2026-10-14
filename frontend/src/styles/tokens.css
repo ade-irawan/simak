@@ -1,0 +1,54 @@
+/* ============================================================
+   Token desain SIMAK — mengikuti bahasa visual cdscan.universitaspertamina.ac.id
+   (tema gelap, Sora + Inter, aksen biru / limau / merah dari logo kampus)
+   ============================================================ */
+:root {
+  /* Merek */
+  --blue: #2e9be6;
+  --blue-deep: #0060a8;
+  --lime: #b4dc1e;
+  --lime-deep: #8cc63e;
+  --red: #f0304a;
+  --red-deep: #e0001e;
+  --amber: #f5b53d;
+
+  /* Permukaan */
+  --bg: #05080f;
+  --bg-raised: #0a111f;
+  --bg-overlay: #0d1626;
+  --surface: rgba(255, 255, 255, 0.035);
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --surface-strong: rgba(255, 255, 255, 0.085);
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.16);
+
+  /* Teks */
+  --text: #eaf0f9;
+  --text-muted: #93a1b8;
+  --text-faint: #6b7a92;
+
+  /* Semantik */
+  --ok: var(--lime);
+  --warn: var(--amber);
+  --danger: var(--red);
+  --info: var(--blue);
+
+  /* Tipografi */
+  --font-display: "Sora", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
+
+  /* Skala */
+  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-lg: 22px;
+  --container: 1240px;
+  --sidebar: 264px;
+  --topbar: 64px;
+
+  /* Gerak & efek */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 0.5s;
+  --shadow-card: 0 20px 50px -24px rgba(0, 0, 0, 0.65);
+  --glow-blue: 0 0 60px -12px rgba(46, 155, 230, 0.45);
+}

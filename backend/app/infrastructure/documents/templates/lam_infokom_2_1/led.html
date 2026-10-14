@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{# IAPS 2.1 LAM INFOKOM: bagian A/B, enam kriteria berbobot, jenis Input/Proses/Output, tahap PPEPP, Suplemen. #}
+{% block isi %}
+{% for k in c.kriteria %}
+<h2>{% if k.kode in ["A", "B", "S"] %}{{ "Bagian " + k.kode if k.kode != "S" else "Suplemen" }}{% else %}Kriteria {{ k.kode }}{% endif %} — {{ k.nama }}{% if k.bobot is not none %} <small>(bobot {{ k.bobot }})</small>{% endif %}</h2>
+{% for b in k.butir %}
+<div class="butir">
+  <h3>{{ b.kode }}. {{ b.elemen }}</h3>
+  <table>
+    <tr><th>Skor estimasi</th><th>Bobot</th><th>Jenis</th><th>Tahap PPEPP</th><th>Status</th></tr>
+    <tr><td>{{ b.skor_estimasi if b.skor_estimasi is not none else "-" }}</td><td>{{ b.bobot if b.bobot is not none else "-" }}</td>
+        <td>{{ b.jenis_ipo or "-" }}</td><td>{{ b.tahap_ppepp or "-" }}</td><td>{{ b.status_kelengkapan }}</td></tr>
+  </table>
+  {% for n in b.narasi %}
+    <div class="bagian">{{ (b.skema_narasi | selectattr("bagian", "equalto", n.bagian) | map(attribute="judul") | first) or n.bagian }}</div>
+    <div class="narasi">{{ n.isi or "(belum diisi)" }}</div>
+  {% else %}<p class="catatan">(narasi belum diisi)</p>{% endfor %}
+  {% if b.data_terpetakan %}<div class="bagian">Data pendukung</div><ul>{% for d in b.data_terpetakan %}<li>{{ d | data }}</li>{% endfor %}</ul>{% endif %}
+  {% if b.bukti %}<div class="bagian">Bukti</div><ul>{% for x in b.bukti %}<li {% if x.status_cek == "tidak_terjangkau" %}class="masalah"{% endif %}>{{ x | bukti }}</li>{% endfor %}</ul>{% endif %}
+</div>
+{% endfor %}
+{% endfor %}
+{% endblock %}

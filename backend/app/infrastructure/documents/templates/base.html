@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Laporan Evaluasi Diri — {{ c.prodi.nama }}</title>
+<style>
+  @page { size: A4; margin: 22mm 18mm 20mm; @bottom-center { content: "Halaman " counter(page) " dari " counter(pages); font-size: 9pt; color: #667; } }
+  body { font-family: "DejaVu Sans", sans-serif; font-size: 10pt; color: #111; line-height: 1.5; }
+  h1 { font-size: 20pt; color: #0060a8; margin: 0 0 4pt; }
+  h2 { font-size: 14pt; color: #0060a8; border-bottom: 1.5pt solid #0060a8; padding-bottom: 3pt; margin-top: 22pt; page-break-after: avoid; }
+  h3 { font-size: 11pt; margin: 14pt 0 4pt; page-break-after: avoid; }
+  table { border-collapse: collapse; width: 100%; margin: 6pt 0; }
+  th, td { border: .5pt solid #aab; padding: 3pt 5pt; text-align: left; vertical-align: top; }
+  th { background: #e8f1fa; }
+  .meta td:first-child { width: 32%; font-weight: bold; background: #f4f7fb; }
+  .catatan { color: #556; font-style: italic; font-size: 9pt; }
+  .masalah { color: #c00020; font-weight: bold; }
+  .butir { margin-bottom: 14pt; }
+  .bagian { font-weight: bold; margin: 6pt 0 2pt; }
+  .narasi { white-space: pre-wrap; }
+  ul { margin: 2pt 0 2pt 14pt; padding: 0; }
+  {% if not final %}
+  .watermark { position: fixed; top: 38%; left: 8%; font-size: 120pt; color: rgba(192, 0, 32, .09); transform: rotate(-30deg); z-index: -1; letter-spacing: 12pt; }
+  {% endif %}
+</style>
+</head>
+<body>
+{% if not final %}<div class="watermark">DRAF</div>{% endif %}
+<h1>Laporan Evaluasi Diri</h1>
+<p>Program Studi <strong>{{ c.prodi.nama }}</strong> ({{ c.prodi.jenjang }})<br>{{ judul_instrumen }}</p>
+<table class="meta">
+  <tr><td>Siklus</td><td>{{ c.siklus.nama }}</td></tr>
+  <tr><td>Tahun akademik TS</td><td>{{ c.siklus.ts }}</td></tr>
+  <tr><td>Data per</td><td>{{ meta.data_per | waktu }}</td></tr>
+  <tr><td>Versi laporan</td><td>{% if meta.pengajuan_nomor %}Pengajuan #{{ meta.pengajuan_nomor }}{% else %}Data berjalan (belum diajukan){% endif %}</td></tr>
+  <tr><td>Status dokumen</td><td>{{ "FINAL (disetujui Dekan)" if final else "DRAF" }}</td></tr>
+</table>
+
+<h2>Ringkasan skor estimasi</h2>
+{% set skor = c.skor or {} %}
+{% if skor.nilai_akhir is not none %}<p>Nilai akhir estimasi: <strong>{{ skor.nilai_akhir }}</strong> dari {{ skor.nilai_akhir_maks }}</p>{% endif %}
+<p>Prediksi peringkat: <strong>{{ (skor.prediksi_peringkat or {}).get("nama", "-") }}</strong></p>
+<p class="catatan">{{ catatan_estimasi }}</p>
+
+{% block isi %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,118 @@
+# SIMAK — lingkungan pengembangan.
+#   cp .env.example .env && docker compose up --build
+# Aplikasi: http://localhost:8088  ·  API docs: http://localhost:8088/api/v1/docs
+#
+# Pemisahan layanan mengikuti docs/arsitektur/02-struktur-backend.md §9:
+# backend satu kode (monolit modular), dijalankan sebagai beberapa proses
+# berbeda (api, worker, beat) di dalam kontainer terpisah.
+
+x-backend: &backend
+  image: simak/backend:dev
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+  env_file: .env
+  environment:
+    APP_ENV: ${APP_ENV:-development}
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+    minio: { condition: service_started }
+  restart: unless-stopped
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "${HTTP_PORT:-8088}:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - api
+      - frontend
+      - minio
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+
+  api:
+    <<: *backend
+    command: >
+      sh -c "alembic upgrade head &&
+             python -m app.cli seed-referensi &&
+             uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8000/api/v1/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    <<: *backend
+    command: celery -A app.worker.celery_app worker -l info -Q default,dokumen,llm,periodik
+    depends_on:
+      api: { condition: service_healthy }
+
+  beat:
+    <<: *backend
+    command: celery -A app.worker.celery_app beat -l info -s /tmp/celerybeat-schedule
+    depends_on:
+      api: { condition: service_healthy }
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-simak}
+      POSTGRES_USER: ${POSTGRES_USER:-simak}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?isi POSTGRES_PASSWORD di .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-simak} -d ${POSTGRES_DB:-simak}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # Image Chainguard (Docker Hub). Tanpa shell, sehingga tanpa healthcheck: api mengulang
+  # inisialisasi bucket sampai MinIO siap. Berjalan sebagai root agar volume dapat ditulis.
+  minio:
+    image: chainguard/minio:latest
+    user: "0:0"
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?isi MINIO_ROOT_USER di .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?isi MINIO_ROOT_PASSWORD di .env}
+    volumes:
+      - miniodata:/data
+    restart: unless-stopped
+
+  # Opsional: server model lokal untuk mode LLM offline.  docker compose --profile llm up
+  llm:
+    image: ollama/ollama:latest
+    profiles: ["llm"]
+    volumes:
+      - llmdata:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+  llmdata:
