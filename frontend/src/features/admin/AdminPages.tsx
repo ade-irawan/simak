@@ -18,9 +18,9 @@ export function PenggunaPage() {
   const tab = (sp.get("tab") as "akun" | "penugasan") ?? "akun";
   return (
     <div className="stack">
-      <PageHead judul="Akun & penugasan" sub={punya("dekan") ? "Dekan menetapkan siapa berperan apa, cakupan prodi, dan mengaktifkan akses asesor (terbatas waktu, per prodi)." : "Administrator Sistem/IT mengelola operasi teknis akun — tanpa akses ke isi data akreditasi."} />
-      {punya("dekan") && <Tabs aktif={tab} onGanti={(t) => setSp({ tab: t })} tabs={[{ kunci: "akun", label: "Akun" }, { kunci: "penugasan", label: "Penugasan peran & asesor" }]} />}
-      {tab === "akun" || !punya("dekan") ? <AkunTab /> : <PenugasanTab />}
+      <PageHead judul="Akun & penugasan" sub={punya("dekan") ? "Dekan menetapkan siapa berperan apa, cakupan prodi, dan mengaktifkan akses asesor (terbatas waktu, per prodi)." : "Administrator Sistem/IT membuat akun, mengatur peran dan sandi, serta membuka kunci — tanpa akses ke isi data akreditasi. Peran Dekan dan aktivasi asesor tetap wewenang Dekan."} />
+      <Tabs aktif={tab} onGanti={(t) => setSp({ tab: t })} tabs={[{ kunci: "akun", label: "Akun" }, { kunci: "penugasan", label: "Penugasan peran & asesor" }]} />
+      {tab === "penugasan" ? <PenugasanTab /> : <AkunTab />}
     </div>
   );
 }
@@ -33,6 +33,8 @@ function AkunTab() {
   const [page, setPage] = useState(1);
   const [baru, setBaru] = useState(false);
   const [aksi, setAksi] = useState<{ jenis: "buka" | "reset" | "nonaktif"; akun: Rec } | null>(null);
+  const [sandi, setSandi] = useState<Rec | null>(null);
+  const { profil } = useAuth();
   const cari = useDebounced(q);
   const data = useApi<Halaman<Rec>>("/pengguna", { q: cari, peran, terkunci, page, per_page: 15 }, { keep: true });
   const kolom: Kolom<Rec>[] = [
@@ -43,6 +45,7 @@ function AkunTab() {
     { kunci: "aksi", judul: "", render: (a) => (
       <div className="row" style={{ justifyContent: "flex-end", gap: "0.3rem" }}>
         {punya("admin_it") && <Button size="icon" variant="ghost" title="Buka kunci" onClick={() => setAksi({ jenis: "buka", akun: a })}><Icon name="unlock" size={15} /></Button>}
+        {punya("admin_it") && a.id !== profil?.id && !a.peran.some((p: Rec) => p.peran === "dekan" && p.status !== "dicabut") && <Button size="icon" variant="ghost" title="Atur sandi sementara" onClick={() => setSandi(a)}><Icon name="edit" size={15} /></Button>}
         {punya("admin_it") && <Button size="icon" variant="ghost" title="Kirim tautan reset sandi" onClick={() => setAksi({ jenis: "reset", akun: a })}><Icon name="refresh" size={15} /></Button>}
         {a.status === "aktif" && <Button size="icon" variant="danger" title="Nonaktifkan" onClick={() => setAksi({ jenis: "nonaktif", akun: a })}><Icon name="x" size={15} /></Button>}
       </div>
@@ -55,30 +58,75 @@ function AkunTab() {
         <select className="input" value={peran} onChange={(e) => { setPeran(e.target.value); setPage(1); }}><option value="">Semua peran</option>{PERAN.map((p) => <option key={p} value={p}>{NAMA_PERAN[p as keyof typeof NAMA_PERAN]}</option>)}</select>
         <select className="input" value={terkunci} onChange={(e) => { setTerkunci(e.target.value); setPage(1); }}><option value="">Semua status kunci</option><option value="true">Sedang terkunci</option><option value="false">Tidak terkunci</option></select>
         <span className="spacer" />
-        {punya("dekan") && <Button onClick={() => setBaru(true)}><Icon name="plus" size={15} /> Akun baru</Button>}
+        {(punya("dekan") || punya("admin_it")) && <Button onClick={() => setBaru(true)}><Icon name="plus" size={15} /> Akun baru</Button>}
       </div>
       <Muat q={data}>{(d) => (<><Tabel kolom={kolom} baris={d.data} id={(a) => a.id} /><Pager page={d.meta.page} perPage={d.meta.per_page} total={d.meta.total} onGanti={setPage} /></>)}</Muat>
       {baru && <AkunBaruModal onTutup={() => setBaru(false)} />}
       {aksi && <AksiAkunModal {...aksi} onTutup={() => setAksi(null)} />}
+      {sandi && <AturSandiModal akun={sandi} onTutup={() => setSandi(null)} />}
     </div>
+  );
+}
+
+/** Peran yang boleh ditetapkan pemanggil: Admin IT tidak menetapkan Dekan; asesor lewat tab Penugasan. */
+function usePeranDapatDitetapkan(termasukAsesor: boolean) {
+  const { punya } = useAuth();
+  return PERAN.filter((p) => (termasukAsesor || p !== "asesor") && (p !== "dekan" || punya("dekan")));
+}
+
+const PERLU_PRODI = ["kaprodi", "staf_prodi", "asesor"];
+
+function sandiAcak(): string {
+  const huruf = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const b = crypto.getRandomValues(new Uint32Array(14));
+  return Array.from(b, (n) => huruf[n % huruf.length]).join("") + "-7";
+}
+
+function AturSandiModal({ akun, onTutup }: { akun: Rec; onTutup: () => void }) {
+  const [sandi, setSandi] = useState("");
+  const simpan = useAksi(() => api.post(`/pengguna/${akun.id}/atur-sandi`, { sandi_baru: sandi }), { sukses: "Sandi sementara ditetapkan (tercatat di audit)", invalidate: INV, onSuccess: onTutup });
+  return (
+    <Modal judul="Atur sandi sementara" onTutup={onTutup} footer={<><Button variant="ghost" onClick={onTutup}>Batal</Button><Button disabled={sandi.length < 8 || simpan.isPending} onClick={() => simpan.mutate()}>Tetapkan sandi</Button></>}>
+      <p className="muted" style={{ marginBottom: "1rem" }}>{akun.nama} ({akun.email}). Pengguna wajib menggantinya saat masuk; semua sesi lamanya dicabut dan kunci akun dibuka. Sampaikan sandi lewat saluran yang aman.</p>
+      <Field label="Sandi sementara" wajib bantuan="Minimal 8 karakter, gabungan huruf dan angka/simbol.">
+        <div className="row" style={{ gap: "0.5rem" }}>
+          <input type="text" style={{ flex: 1 }} value={sandi} onChange={(e) => setSandi(e.target.value)} autoComplete="off" spellCheck={false} />
+          <Button variant="ghost" onClick={() => setSandi(sandiAcak())}>Buat acak</Button>
+        </div>
+      </Field>
+      {simpan.error && <ErrorBox error={simpan.error} />}
+    </Modal>
   );
 }
 
 function AkunBaruModal({ onTutup }: { onTutup: () => void }) {
   const prodi = useApi<Rec[]>("/prodi");
-  const [f, setF] = useState({ nama: "", email: "", password_awal: "", peran: "kaprodi", prodi_id: "" });
-  const perluProdi = ["kaprodi", "staf_prodi"].includes(f.peran);
-  const simpan = useAksi(() => api.post("/pengguna", { nama: f.nama, email: f.email, password_awal: f.password_awal || null, penugasan: [{ peran: f.peran, prodi_id: perluProdi ? f.prodi_id : null }] }),
+  const opsiPeran = usePeranDapatDitetapkan(false);
+  const [f, setF] = useState({ nama: "", email: "", password_awal: "" });
+  const [peran, setPeran] = useState<{ peran: string; prodi_id: string }[]>([{ peran: "kaprodi", prodi_id: "" }]);
+  const ubahPeran = (i: number, k: "peran" | "prodi_id", v: string) => setPeran(peran.map((r, j) => (j === i ? { ...r, [k]: v, ...(k === "peran" ? { prodi_id: "" } : {}) } : r)));
+  const lengkap = peran.every((r) => !PERLU_PRODI.includes(r.peran) || r.prodi_id);
+  const simpan = useAksi(() => api.post("/pengguna", { nama: f.nama, email: f.email, password_awal: f.password_awal || null, penugasan: peran.map((r) => ({ peran: r.peran, prodi_id: PERLU_PRODI.includes(r.peran) ? r.prodi_id : null })) }),
     { sukses: "Akun dibuat", invalidate: INV, onSuccess: onTutup });
   const set = (k: string, v: string) => setF({ ...f, [k]: v });
   return (
-    <Modal judul="Akun baru" onTutup={onTutup} footer={<><Button variant="ghost" onClick={onTutup}>Batal</Button><Button disabled={!f.nama || !f.email || (perluProdi && !f.prodi_id) || simpan.isPending} onClick={() => simpan.mutate()}>Buat akun</Button></>}>
+    <Modal judul="Akun baru" onTutup={onTutup} footer={<><Button variant="ghost" onClick={onTutup}>Batal</Button><Button disabled={!f.nama || !f.email || !lengkap || simpan.isPending} onClick={() => simpan.mutate()}>Buat akun</Button></>}>
       <div className="form-grid">
         <Field label="Nama" wajib><input value={f.nama} onChange={(e) => set("nama", e.target.value)} /></Field>
         <Field label="Surel" wajib><input type="email" value={f.email} onChange={(e) => set("email", e.target.value)} /></Field>
-        <Field label="Peran" wajib><select value={f.peran} onChange={(e) => set("peran", e.target.value)}>{PERAN.filter((p) => p !== "asesor").map((p) => <option key={p} value={p}>{NAMA_PERAN[p as keyof typeof NAMA_PERAN]}</option>)}</select></Field>
-        {perluProdi && <Field label="Program studi" wajib><select value={f.prodi_id} onChange={(e) => set("prodi_id", e.target.value)}><option value="">— pilih —</option>{prodi.data?.map((p) => <option key={p.id} value={p.id}>{p.nama} ({namaLam(p.lam)})</option>)}</select></Field>}
-        <Field label="Sandi awal (opsional)" span2 bantuan="Kosong = pengguna menetapkan sandi sendiri lewat tautan surel. Peran asesor dibuat lewat tab Penugasan setelah akun ada."><input type="password" value={f.password_awal} onChange={(e) => set("password_awal", e.target.value)} autoComplete="new-password" /></Field>
+        <Field label="Peran" span2 bantuan="Satu akun dapat memegang beberapa peran. Peran asesor ditambahkan lewat tab Penugasan setelah akun ada.">
+          <div className="stack" style={{ gap: "0.5rem" }}>
+            {peran.map((r, i) => (
+              <div className="row" key={i} style={{ gap: "0.5rem" }}>
+                <select style={{ flex: 1 }} value={r.peran} onChange={(e) => ubahPeran(i, "peran", e.target.value)}>{opsiPeran.map((p) => <option key={p} value={p}>{NAMA_PERAN[p as keyof typeof NAMA_PERAN]}</option>)}</select>
+                {PERLU_PRODI.includes(r.peran) && <select style={{ flex: 1 }} value={r.prodi_id} onChange={(e) => ubahPeran(i, "prodi_id", e.target.value)}><option value="">— prodi —</option>{prodi.data?.map((p) => <option key={p.id} value={p.id}>{p.nama} ({namaLam(p.lam)})</option>)}</select>}
+                {peran.length > 1 && <Button size="icon" variant="ghost" title="Hapus peran" onClick={() => setPeran(peran.filter((_, j) => j !== i))}><Icon name="x" size={15} /></Button>}
+              </div>
+            ))}
+            <div><Button size="sm" variant="ghost" onClick={() => setPeran([...peran, { peran: "staf_prodi", prodi_id: "" }])}><Icon name="plus" size={14} /> Tambah peran</Button></div>
+          </div>
+        </Field>
+        <Field label="Sandi awal (opsional)" span2 bantuan="Kosong = pengguna menetapkan sandi sendiri lewat tautan surel. Bila diisi, pengguna wajib menggantinya saat masuk pertama."><div className="row" style={{ gap: "0.5rem" }}><input style={{ flex: 1 }} type="text" value={f.password_awal} onChange={(e) => set("password_awal", e.target.value)} autoComplete="off" spellCheck={false} /><Button variant="ghost" onClick={() => set("password_awal", sandiAcak())}>Buat acak</Button></div></Field>
       </div>
       {simpan.error && <ErrorBox error={simpan.error} />}
     </Modal>
@@ -104,6 +152,7 @@ function AksiAkunModal({ jenis, akun, onTutup }: { jenis: "buka" | "reset" | "no
 }
 
 function PenugasanTab() {
+  const { punya, profil } = useAuth();
   const [status, setStatus] = useState("");
   const [peran, setPeran] = useState("");
   const [baru, setBaru] = useState(false);
@@ -118,14 +167,14 @@ function PenugasanTab() {
     { kunci: "status", judul: "Status", render: (t) => <StatusPill status={t.status} /> },
     { kunci: "aksi", judul: "", render: (t) => (
       <div className="row" style={{ justifyContent: "flex-end" }}>
-        {t.status === "diusulkan" && <Button size="sm" variant="lime" onClick={() => setSetuju(t)}>Setujui</Button>}
-        {t.status !== "dicabut" && <Button size="sm" variant="danger" onClick={() => cabut.mutate(t.id)}>Cabut</Button>}
+        {t.status === "diusulkan" && punya("dekan") && <Button size="sm" variant="lime" onClick={() => setSetuju(t)}>Setujui</Button>}
+        {t.status !== "dicabut" && (punya("dekan") || (t.peran !== "dekan" && t.pengguna.id !== profil?.id)) && <Button size="sm" variant="danger" onClick={() => cabut.mutate(t.id)}>Cabut</Button>}
       </div>
     ) },
   ];
   return (
     <div className="stack">
-      <Alert jenis="info" judul="Aturan akses asesor">Hanya Dekan yang mengaktifkan asesor; akses terikat satu prodi, hanya-baca, otomatis berakhir di akhir jendela asesmen, dan hanya setelah laporan prodi berstatus <strong>Disetujui</strong>. Bila belum, usulan tetap tersimpan dan dapat diaktifkan kemudian (EC-28).</Alert>
+      <Alert jenis="info" judul="Aturan akses asesor">{!punya("dekan") && "Penugasan asesor yang Anda tambahkan berstatus usulan sampai Dekan menyetujuinya. "}Hanya Dekan yang mengaktifkan asesor; akses terikat satu prodi, hanya-baca, otomatis berakhir di akhir jendela asesmen, dan hanya setelah laporan prodi berstatus <strong>Disetujui</strong>. Bila belum, usulan tetap tersimpan dan dapat diaktifkan kemudian (EC-28).</Alert>
       <div className="toolbar">
         <select className="input" value={peran} onChange={(e) => setPeran(e.target.value)}><option value="">Semua peran</option>{PERAN.map((p) => <option key={p} value={p}>{NAMA_PERAN[p as keyof typeof NAMA_PERAN]}</option>)}</select>
         <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}><option value="">Semua status</option><option value="aktif">Aktif</option><option value="diusulkan">Diusulkan</option><option value="dicabut">Dicabut</option></select>
@@ -142,6 +191,7 @@ const lokal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000)
 
 function PenugasanModal({ onTutup }: { onTutup: () => void }) {
   const users = useApi<Halaman<Rec>>("/pengguna", { per_page: 100 });
+  const opsiPeran = usePeranDapatDitetapkan(true);
   const prodi = useApi<Rec[]>("/prodi");
   const [f, setF] = useState({ pengguna_id: "", peran: "asesor", prodi_id: "", mulai: lokal(new Date()), sampai: lokal(new Date(Date.now() + 4 * 86400000)), catatan: "" });
   const set = (k: string, v: string) => setF({ ...f, [k]: v });
@@ -154,7 +204,7 @@ function PenugasanModal({ onTutup }: { onTutup: () => void }) {
     <Modal judul="Tambah penugasan peran" onTutup={onTutup} footer={<><Button variant="ghost" onClick={onTutup}>Batal</Button><Button disabled={!f.pengguna_id || (perluProdi && !f.prodi_id) || simpan.isPending} onClick={() => simpan.mutate()}>Tambah</Button></>}>
       <div className="form-grid">
         <Field label="Pengguna" wajib span2><select value={f.pengguna_id} onChange={(e) => set("pengguna_id", e.target.value)}><option value="">— pilih —</option>{users.data?.data.map((u) => <option key={u.id} value={u.id}>{u.nama} — {u.email}</option>)}</select></Field>
-        <Field label="Peran" wajib><select value={f.peran} onChange={(e) => set("peran", e.target.value)}>{PERAN.map((p) => <option key={p} value={p}>{NAMA_PERAN[p as keyof typeof NAMA_PERAN]}</option>)}</select></Field>
+        <Field label="Peran" wajib><select value={f.peran} onChange={(e) => set("peran", e.target.value)}>{opsiPeran.map((p) => <option key={p} value={p}>{NAMA_PERAN[p as keyof typeof NAMA_PERAN]}</option>)}</select></Field>
         {perluProdi && <Field label="Program studi" wajib><select value={f.prodi_id} onChange={(e) => set("prodi_id", e.target.value)}><option value="">— pilih —</option>{prodi.data?.map((p) => <option key={p.id} value={p.id}>{p.nama}</option>)}</select></Field>}
         {f.peran === "asesor" && <><Field label="Jendela mulai" wajib><input type="datetime-local" value={f.mulai} onChange={(e) => set("mulai", e.target.value)} /></Field><Field label="Jendela berakhir" wajib><input type="datetime-local" value={f.sampai} onChange={(e) => set("sampai", e.target.value)} /></Field></>}
         <Field label="Catatan" span2><input value={f.catatan} onChange={(e) => set("catatan", e.target.value)} placeholder="mis. Asesmen lapangan Prodi Kimia" /></Field>

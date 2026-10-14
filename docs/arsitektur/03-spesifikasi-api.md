@@ -154,16 +154,17 @@ Respons `423` (terkunci):
 | Method | Endpoint | Peran | Fungsi |
 |---|---|---|---|
 | GET | `/pengguna` | D, IT | Daftar akun. Saringan: `peran`, `prodi_id`, `status`, `terkunci` |
-| POST | `/pengguna` | D | Membuat akun beserta penugasan awal |
+| POST | `/pengguna` | D, IT | Membuat akun beserta penugasan awal. IT tidak dapat menetapkan peran Dekan |
 | GET | `/pengguna/{id}` | D, IT | Rincian akun |
 | PATCH | `/pengguna/{id}` | D | Mengubah nama atau status |
 | POST | `/pengguna/{id}/buka-kunci` | IT | Membuka kunci akun |
 | POST | `/pengguna/{id}/reset-sandi` | IT | Mengirim tautan reset sandi |
+| POST | `/pengguna/{id}/atur-sandi` | IT | Menetapkan sandi sementara (`{"sandi_baru"}`, 204). Pengguna wajib menggantinya saat masuk; sesi lama dicabut, kunci dibuka. Ditolak untuk akun Dekan dan akun sendiri |
 | POST | `/pengguna/{id}/nonaktifkan` | D, IT | Menonaktifkan akun |
-| GET | `/penugasan-peran` | D | Daftar penugasan. Saringan: `peran`, `prodi_id`, `status` |
-| POST | `/penugasan-peran` | D; K hanya untuk mengusulkan asesor | Menambah penugasan |
+| GET | `/penugasan-peran` | D, IT; K hanya asesor prodinya | Daftar penugasan. Saringan: `peran`, `prodi_id`, `status` |
+| POST | `/penugasan-peran` | D; IT (kecuali peran Dekan; asesor hanya berstatus usulan); K hanya untuk mengusulkan asesor | Menambah penugasan |
 | POST | `/penugasan-peran/{id}/setujui` | D | Mengaktifkan usulan asesor dan menetapkan jendela asesmen |
-| POST | `/penugasan-peran/{id}/cabut` | D | Mencabut penugasan |
+| POST | `/penugasan-peran/{id}/cabut` | D, IT | Mencabut penugasan. IT tidak dapat mencabut penugasan Dekan atau miliknya sendiri |
 
 ### `POST /pengguna/{id}/buka-kunci`
 

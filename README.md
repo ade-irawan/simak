@@ -155,6 +155,9 @@ di server dari penugasan peran aktif; klien tidak pernah mengirim peran. Isolasi
 oleh Kaprodi, asesor hanya-baca pada **versi laporan yang disetujui** dan berjendela waktu, serta Admin IT tanpa akses konten semuanya ditegakkan
 di use case dan diuji per peran.
 
+Admin IT mengelola akun: membuat pengguna beserta peran dan prodinya, menetapkan sandi sementara (pengguna wajib menggantinya saat masuk), membuka kunci, dan menonaktifkan.
+Pagar pemisahan tugas: Admin IT tidak dapat menetapkan peran Dekan atau mengubah sandi akun Dekan, dan asesor dari Admin IT hanya berstatus usulan sampai Dekan menyetujui. Semua tindakan tercatat di log audit.
+
 ## Data awal
 
 `make naik` memuat `db/seed.sql` (fakultas, LAM, tiga prodi, kerangka kriteria dan peringkat, satu butir contoh per instrumen). Instrumen itu berstatus **draf**.

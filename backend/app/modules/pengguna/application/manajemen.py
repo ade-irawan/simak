@@ -1,7 +1,9 @@
 """Use case manajemen akun dan penugasan peran.
 
 * Dekan: kebijakan (siapa berperan apa, cakupan prodi, aktivasi asesor) — US-G2, §3.4.
-* Admin IT: operasi teknis (buka kunci, reset sandi, nonaktif) tanpa akses konten — US-A1.
+* Admin IT: operasi akun — membuat akun beserta penugasan perannya, mengatur/reset sandi, buka kunci, nonaktif —
+  tanpa akses konten (US-A1). Pagar pemisahan tugas: Admin IT tidak menetapkan peran Dekan, tidak mengubah sandi akun
+  Dekan, dan penugasan asesor darinya hanya berstatus usulan sampai Dekan menyetujui (EC-26/28).
 * Kaprodi: hanya mengusulkan asesor untuk prodinya.
 """
 
@@ -133,10 +135,25 @@ class ManajemenAkun:
         return p
 
     # ---------- akun ----------
+    async def _memegang_peran(self, pengguna_id: UUID, peran: Peran) -> bool:
+        ada = await self.session.execute(
+            select(PenugasanPeran.id).where(
+                PenugasanPeran.pengguna_id == pengguna_id, PenugasanPeran.peran == peran, PenugasanPeran.status != StatusPenugasan.DICABUT
+            )
+        )
+        return ada.first() is not None
+
+    @staticmethod
+    def _tolak_dekan_oleh_it(pemanggil: Pemanggil, peran: Peran) -> None:
+        """Peran Dekan hanya ditetapkan Dekan; Admin IT tidak boleh mengangkat Dekan (pemisahan tugas)."""
+        if peran == Peran.DEKAN and not pemanggil.punya(D):
+            raise AksesDitolak(alasan="admin_it_tidak_menetapkan_dekan")
+
     async def buat(self, pemanggil: Pemanggil, data: Any) -> dict[str, Any]:
-        pemanggil.wajib(D)
+        pemanggil.wajib(D, IT)
         for pa in data.penugasan:
             self._periksa_cakupan(pa.peran, pa.prodi_id)
+            self._tolak_dekan_oleh_it(pemanggil, pa.peran)
         async with self.uow:
             sandi = data.password_awal
             if sandi:
@@ -221,6 +238,22 @@ class ManajemenAkun:
             )
         return {"id": p.id, "status": p.status, "terkunci_sampai": None, "jumlah_gagal_login": 0}
 
+    async def atur_sandi(self, pemanggil: Pemanggil, pengguna_id: UUID, sandi_baru: str) -> None:
+        """Admin IT menetapkan sandi sementara; pengguna wajib menggantinya saat masuk. Sesi lama dicabut dan kunci dibuka."""
+        pemanggil.wajib(IT)
+        if pengguna_id == pemanggil.id:
+            raise ValidasiGagal("Untuk akun sendiri gunakan menu Ganti kata sandi.")
+        wajib_sandi_kuat(sandi_baru)
+        async with self.uow:
+            p = await self._ambil(pengguna_id)
+            if await self._memegang_peran(p.id, Peran.DEKAN):
+                raise AksesDitolak(alasan="admin_it_tidak_mengubah_sandi_dekan")
+            p.password_hash = hash_sandi(sandi_baru)
+            p.wajib_ganti_sandi = True
+            p.jumlah_gagal_login, p.terkunci_sampai = 0, None
+            await tokens.cabut_semua_refresh(self.session, p.id)
+            await audit.catat(self.session, "pengguna.atur_sandi", pemanggil=pemanggil, entitas="pengguna", entitas_id=p.id)
+
     async def reset_sandi(self, pemanggil: Pemanggil, pengguna_id: UUID) -> None:
         pemanggil.wajib(IT)
         async with self.uow:
@@ -239,9 +272,9 @@ class ManajemenAkun:
     async def daftar_penugasan(
         self, pemanggil: Pemanggil, param: ParamHalaman, *, peran: Peran | None, prodi_id: UUID | None, status: StatusPenugasan | None
     ) -> dict[str, Any]:
-        pemanggil.wajib(D, K)
+        pemanggil.wajib(D, K, IT)
         stmt = select(PenugasanPeran)
-        if not pemanggil.punya(D):
+        if not pemanggil.punya(D, IT):
             # Kaprodi hanya melihat usulan/penugasan asesor di prodinya sendiri (§3.4).
             milik = pemanggil.prodi_dari(K)
             if prodi_id and prodi_id not in milik:
@@ -290,13 +323,19 @@ class ManajemenAkun:
         return [{"id": p.id, "nama": p.nama, "email": p.email} for p in baris]
 
     async def tambah_penugasan(self, pemanggil: Pemanggil, data: Any) -> dict[str, Any]:
-        pemanggil.wajib(D, K)
+        pemanggil.wajib(D, K, IT)
         self._periksa_cakupan(data.peran, data.prodi_id)
-        mengusulkan = not pemanggil.punya(D)
-        if mengusulkan:
-            # Kaprodi hanya boleh mengusulkan asesor untuk prodinya sendiri (§3.4).
-            if data.peran != Peran.ASESOR or data.prodi_id not in pemanggil.prodi_dari(K):
-                raise AksesDitolak(alasan="kaprodi_hanya_mengusulkan_asesor_prodi_sendiri")
+        mengusulkan = False
+        if not pemanggil.punya(D):
+            if pemanggil.punya(IT):
+                # Admin IT mengatur peran akun, tetapi asesor tetap menunggu persetujuan Dekan.
+                self._tolak_dekan_oleh_it(pemanggil, data.peran)
+                mengusulkan = data.peran == Peran.ASESOR
+            else:
+                # Kaprodi hanya boleh mengusulkan asesor untuk prodinya sendiri (§3.4).
+                mengusulkan = True
+                if data.peran != Peran.ASESOR or data.prodi_id not in pemanggil.prodi_dari(K):
+                    raise AksesDitolak(alasan="kaprodi_hanya_mengusulkan_asesor_prodi_sendiri")
         pengguna = await self._ambil(data.pengguna_id)
         if pengguna.status != StatusPengguna.AKTIF:
             raise ValidasiGagal("Akun tidak aktif.")
@@ -393,10 +432,14 @@ class ManajemenAkun:
         return await self._satu_penugasan(penugasan_id)
 
     async def cabut_penugasan(self, pemanggil: Pemanggil, penugasan_id: UUID) -> dict[str, Any]:
-        pemanggil.wajib(D)
+        pemanggil.wajib(D, IT)
         penugasan = await self.session.get(PenugasanPeran, penugasan_id)
         if penugasan is None:
             raise TidakDitemukan("Penugasan tidak ditemukan.")
+        if not pemanggil.punya(D):
+            self._tolak_dekan_oleh_it(pemanggil, penugasan.peran)
+            if penugasan.pengguna_id == pemanggil.id:
+                raise ValidasiGagal("Tidak dapat mencabut penugasan milik sendiri.")
         if penugasan.status == StatusPenugasan.DICABUT:
             raise KonflikStatus("Penugasan sudah dicabut.")
         async with self.uow:

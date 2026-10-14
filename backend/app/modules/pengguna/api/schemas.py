@@ -68,6 +68,10 @@ class AlasanIn(BaseModel):
     alasan: str = Field(min_length=5)
 
 
+class SandiBaruIn(BaseModel):
+    sandi_baru: str = Field(min_length=1, description="Sandi sementara; pengguna wajib menggantinya saat masuk")
+
+
 class KunciOut(BaseModel):
     id: UUID
     status: StatusPengguna

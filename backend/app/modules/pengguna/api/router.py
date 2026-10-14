@@ -17,6 +17,7 @@ from app.modules.pengguna.api.schemas import (
     PenugasanIn,
     PenugasanOut,
     PenyetujuanIn,
+    SandiBaruIn,
 )
 from app.modules.pengguna.application.manajemen import ManajemenAkun
 from app.modules.pengguna.domain.entities import StatusPengguna, StatusPenugasan
@@ -42,7 +43,7 @@ async def daftar_pengguna(
 
 
 @router.post("/pengguna", response_model=PenggunaOut, status_code=201)
-async def buat_pengguna(data: PenggunaIn, pemanggil: Pemanggil = Depends(butuh(D)), svc: ManajemenAkun = Depends(_akun)):
+async def buat_pengguna(data: PenggunaIn, pemanggil: Pemanggil = Depends(butuh(D, IT)), svc: ManajemenAkun = Depends(_akun)):
     return await svc.buat(pemanggil, data)
 
 
@@ -73,6 +74,13 @@ async def buka_kunci(pengguna_id: UUID, data: AlasanIn, pemanggil: Pemanggil = D
     return await svc.buka_kunci(pemanggil, pengguna_id, data.alasan)
 
 
+@router.post("/pengguna/{pengguna_id}/atur-sandi", status_code=204)
+async def atur_sandi(pengguna_id: UUID, data: SandiBaruIn, pemanggil: Pemanggil = Depends(butuh(IT)), svc: ManajemenAkun = Depends(_akun)):
+    """Admin IT menetapkan sandi sementara; pengguna wajib menggantinya saat masuk."""
+    await svc.atur_sandi(pemanggil, pengguna_id, data.sandi_baru)
+    return Response(status_code=204)
+
+
 @router.post("/pengguna/{pengguna_id}/reset-sandi", status_code=202)
 async def reset_sandi(pengguna_id: UUID, pemanggil: Pemanggil = Depends(butuh(IT)), svc: ManajemenAkun = Depends(_akun)):
     await svc.reset_sandi(pemanggil, pengguna_id)
@@ -90,14 +98,14 @@ async def daftar_penugasan(
     peran: Peran | None = None,
     prodi_id: UUID | None = None,
     status: StatusPenugasan | None = None,
-    pemanggil: Pemanggil = Depends(butuh(D, K)),
+    pemanggil: Pemanggil = Depends(butuh(D, K, IT)),
     svc: ManajemenAkun = Depends(_akun),
 ):
     return await svc.daftar_penugasan(pemanggil, param, peran=peran, prodi_id=prodi_id, status=status)
 
 
 @router.post("/penugasan-peran", response_model=PenugasanOut, status_code=201)
-async def tambah_penugasan(data: PenugasanIn, pemanggil: Pemanggil = Depends(butuh(D, K)), svc: ManajemenAkun = Depends(_akun)):
+async def tambah_penugasan(data: PenugasanIn, pemanggil: Pemanggil = Depends(butuh(D, K, IT)), svc: ManajemenAkun = Depends(_akun)):
     return await svc.tambah_penugasan(pemanggil, data)
 
 
@@ -109,7 +117,7 @@ async def setujui_penugasan(
 
 
 @router.post("/penugasan-peran/{penugasan_id}/cabut", response_model=PenugasanOut)
-async def cabut_penugasan(penugasan_id: UUID, pemanggil: Pemanggil = Depends(butuh(D)), svc: ManajemenAkun = Depends(_akun)):
+async def cabut_penugasan(penugasan_id: UUID, pemanggil: Pemanggil = Depends(butuh(D, IT)), svc: ManajemenAkun = Depends(_akun)):
     return await svc.cabut_penugasan(pemanggil, penugasan_id)
 
 
