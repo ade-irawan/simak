@@ -37,7 +37,7 @@ def _set_cookie(response: Response, token: str) -> None:
         httponly=True,
         secure=cfg.cookie_secure,
         samesite="strict",
-        path=f"{cfg.api_prefix}/auth",
+        path=f"{cfg.base_path}{cfg.api_prefix}/auth",
     )
 
 
@@ -73,7 +73,7 @@ async def logout(
 ):
     await svc.keluar(simak_refresh, pemanggil)
     cfg = get_settings()
-    response.delete_cookie(cfg.cookie_name, path=f"{cfg.api_prefix}/auth")
+    response.delete_cookie(cfg.cookie_name, path=f"{cfg.base_path}{cfg.api_prefix}/auth")
 
 
 @router.get("/me", response_model=ProfilOut)

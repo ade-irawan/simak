@@ -2,6 +2,7 @@
 #   /api/...        -> FastAPI
 #   /<bucket>/...   -> MinIO (URL unggah/unduh bertanda tangan; Host harus utuh agar tanda tangan sah)
 #   selain itu      -> berkas statis frontend (SPA)
+# Berkas ini adalah templat: ${BASE_PATH} diisi dari .env oleh entrypoint Nginx (envsubst); variabel Nginx ($host, dst.) tidak tersentuh.
 
 upstream simak_api      { server api:8000; }
 upstream simak_frontend { server frontend:80; }
@@ -13,6 +14,12 @@ server {
 
     # Batas ukuran unggahan lewat API (berkas bukti diunggah langsung ke MinIO).
     client_max_body_size 30m;
+
+    # Sub-path publik (BASE_PATH, mis. /simak). Proxy di depan boleh melepas prefiks atau meneruskannya; keduanya diterima,
+    # dan setelah baris ini seluruh aturan di bawah memakai jalur tanpa prefiks. Bila BASE_PATH kosong, baris ini tidak berefek.
+    absolute_redirect off;  # Location relatif: aman di balik proxy (port/host internal tidak bocor)
+    rewrite ^${BASE_PATH}$ ${BASE_PATH}/ redirect;
+    rewrite ^${BASE_PATH}/(.*)$ /$1 break;
 
     # Header keamanan dasar.
     add_header X-Content-Type-Options "nosniff" always;

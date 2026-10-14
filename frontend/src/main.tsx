@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./shared/auth/AuthProvider";
 import { ApiError } from "./shared/api/client";
+import "./shared/lib/tema";
 import { ToastProvider } from "./shared/ui";
 import "./styles/tokens.css";
 import "./styles/base.css";
@@ -26,7 +27,7 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "") || undefined}>
         <ToastProvider>
           <AuthProvider>
             <App />

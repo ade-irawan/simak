@@ -7,7 +7,7 @@ import hashlib
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _JWT_BAWAAN = "dev-only-jwt-secret-ganti-di-produksi-0123456789"
@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_base_url: str = "http://localhost:8080"
     api_prefix: str = "/api/v1"
+    #: Sub-path publik tempat aplikasi dipasang di balik proxy lain (mis. "/simak"); kosong = akar.
+    base_path: str = ""
     cors_origins: list[str] = Field(default_factory=list)
 
     database_url: str = "postgresql+asyncpg://simak:simak@localhost:5432/simak"
@@ -51,6 +53,12 @@ class Settings(BaseSettings):
     fakultas_nama: str = "Fakultas Sains dan Ilmu Komputer"
 
     simak_db_dir: str = ""
+
+    @field_validator("base_path")
+    @classmethod
+    def _normalkan_base_path(cls, v: str) -> str:
+        v = v.strip().strip("/")
+        return f"/{v}" if v else ""
 
     @property
     def produksi(self) -> bool:

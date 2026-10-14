@@ -90,6 +90,7 @@ def create_app() -> FastAPI:
         docs_url=f"{p}/docs",
         openapi_url=f"{p}/openapi.json",
         redoc_url=None,
+        root_path=cfg.base_path,
         lifespan=lifespan,
     )
 

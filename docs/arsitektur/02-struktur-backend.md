@@ -27,7 +27,7 @@ simak/
 ├── docker-compose.prod.yml       # produksi
 ├── .env.example
 ├── nginx/
-│   └── conf.d/simak.conf         # /api -> api:8000, sisanya -> berkas statis frontend
+│   └── templates/default.conf.template  # /api -> api:8000, sisanya -> berkas statis frontend
 ├── backend/
 ├── frontend/                     # Vite + React + Tailwind + shadcn/ui + TanStack Query
 └── docs/                         # SKPL dan tiga dokumen arsitektur ini

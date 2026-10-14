@@ -11,6 +11,7 @@ import io
 import logging
 from datetime import timedelta
 from functools import lru_cache
+from urllib.parse import urlsplit, urlunsplit
 
 from minio import Minio
 from minio.error import S3Error
@@ -25,6 +26,7 @@ class MinioStorage:
     def __init__(self) -> None:
         cfg = get_settings()
         self.bucket = cfg.minio_bucket
+        self._base_path = cfg.base_path
         self._internal = Minio(cfg.minio_endpoint, cfg.minio_root_user, cfg.minio_root_password, secure=cfg.minio_secure, region=REGION)
         self._publik = Minio(
             cfg.minio_public_endpoint, cfg.minio_root_user, cfg.minio_root_password, secure=cfg.minio_public_secure, region=REGION
@@ -43,12 +45,19 @@ class MinioStorage:
                 await asyncio.sleep(2)
         raise RuntimeError("MinIO tidak dapat dijangkau.")
 
+    def _publik_url(self, url: str) -> str:
+        """Menyisipkan sub-path publik (BASE_PATH). Tanda tangan tetap sah: proxy melepas prefiks sebelum sampai ke MinIO."""
+        if not self._base_path:
+            return url
+        p = urlsplit(url)
+        return urlunsplit((p.scheme, p.netloc, f"{self._base_path}{p.path}", p.query, p.fragment))
+
     def url_unggah(self, objek_key: str, kedaluwarsa: timedelta) -> str:
-        return self._publik.presigned_put_object(self.bucket, objek_key, expires=kedaluwarsa)
+        return self._publik_url(self._publik.presigned_put_object(self.bucket, objek_key, expires=kedaluwarsa))
 
     def url_unduh(self, objek_key: str, nama_berkas: str | None, kedaluwarsa: timedelta) -> str:
         header = {"response-content-disposition": f'attachment; filename="{nama_berkas}"'} if nama_berkas else None
-        return self._publik.presigned_get_object(self.bucket, objek_key, expires=kedaluwarsa, response_headers=header)
+        return self._publik_url(self._publik.presigned_get_object(self.bucket, objek_key, expires=kedaluwarsa, response_headers=header))
 
     async def ada(self, objek_key: str) -> bool:
         return await self.ukuran(objek_key) is not None

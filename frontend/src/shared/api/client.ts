@@ -2,7 +2,8 @@
  * Klien API. Token akses disimpan di memori (bukan localStorage) dan diperbarui lewat cookie penyegar
  * HttpOnly; 401 memicu satu kali penyegaran lalu pengulangan permintaan.
  */
-export const API = "/api/v1";
+/** BASE_URL berakhiran "/" (mis. "/" atau "/simak/"), sehingga hasilnya "/api/v1" atau "/simak/api/v1". */
+export const API = `${import.meta.env.BASE_URL}api/v1`;
 
 export interface GalatDetail {
   kolom?: string;

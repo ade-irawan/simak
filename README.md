@@ -87,6 +87,35 @@ Catatan:
 Isi `.env` dengan rahasia produksi, letakkan sertifikat di `nginx/tls/`, lalu
 `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build` dan buat Dekan pertama dengan `make buat-dekan`. Jangan menjalankan `seed-demo` di produksi.
 
+### Dipasang di sub-path (mis. `https://kampus.ac.id/simak/`)
+
+Bila SIMAK berada di balik proxy lain pada sub-path, atur satu variabel di `.env`, lalu bangun ulang (frontend menanam sub-path saat build):
+
+```bash
+BASE_PATH=/simak
+APP_BASE_URL=https://kampus.ac.id/simak     # dipakai untuk tautan di surel
+MINIO_PUBLIC_ENDPOINT=kampus.ac.id          # hanya host; prefiks disisipkan otomatis ke URL unggah/unduh
+MINIO_PUBLIC_SECURE=true
+COOKIE_SECURE=true                          # bila diakses lewat HTTPS
+```
+
+`make naik` menerapkannya. Kosongkan `BASE_PATH` untuk kembali melayani dari akar. Dengan `BASE_PATH` terisi, alamat akar (`http://host:8088/`) tidak lagi dipakai; gunakan `http://host:8088/simak/`.
+
+Proxy di depan boleh **melepas** prefiks (`proxy_pass http://10.10.72.50:8088/;`) atau **meneruskannya**; keduanya diterima. Yang wajib: teruskan `Host` asli
+(tanda tangan URL MinIO mencakup host) dan izinkan unggahan besar. Contoh:
+
+```nginx
+location = /simak { return 301 /simak/; }
+location /simak/ {
+    proxy_pass http://10.10.72.50:8088;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    client_max_body_size 30m;
+    proxy_request_buffering off;
+}
+```
+
 ## Arsitektur
 
 Backend adalah **monolit modular** (satu kode, satu basis data, batas modul ditegakkan otomatis) yang dijalankan sebagai beberapa **kontainer** terpisah:

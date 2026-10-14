@@ -1,4 +1,5 @@
 # Konfigurasi Nginx produksi (TLS). Dipasang oleh docker-compose.prod.yml menggantikan nginx/conf.d.
+# Templat: ${BASE_PATH} diisi dari .env (lihat nginx/templates/default.conf.template).
 # Letakkan sertifikat di nginx/tls/fullchain.pem dan nginx/tls/privkey.pem (tidak ikut git).
 
 upstream simak_api      { server api:8000; }
@@ -22,6 +23,12 @@ server {
     ssl_session_cache   shared:SSL:10m;
 
     client_max_body_size 30m;
+
+    # Sub-path publik (BASE_PATH, mis. /simak). Proxy di depan boleh melepas prefiks atau meneruskannya; keduanya diterima,
+    # dan setelah baris ini seluruh aturan di bawah memakai jalur tanpa prefiks. Bila BASE_PATH kosong, baris ini tidak berefek.
+    absolute_redirect off;  # Location relatif: aman di balik proxy (port/host internal tidak bocor)
+    rewrite ^${BASE_PATH}$ ${BASE_PATH}/ redirect;
+    rewrite ^${BASE_PATH}/(.*)$ /$1 break;
 
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
     add_header X-Content-Type-Options "nosniff" always;

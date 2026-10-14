@@ -25,8 +25,10 @@ services:
     image: nginx:1.27-alpine
     ports:
       - "${HTTP_PORT:-8088}:80"
+    environment:
+      BASE_PATH: ${BASE_PATH:-}
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/templates:/etc/nginx/templates:ro
     depends_on:
       - api
       - frontend
@@ -36,6 +38,8 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        BASE_PATH: ${BASE_PATH:-}
     restart: unless-stopped
 
   api:
