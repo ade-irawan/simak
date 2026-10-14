@@ -12,7 +12,7 @@
 .btn--primary:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 0 70px -8px rgba(46, 155, 230, 0.6); }
 .btn--ghost { border-color: var(--line-strong); background: var(--surface); color: var(--text); }
 .btn--ghost:not(:disabled):hover { transform: translateY(-1px); background: var(--surface-hover); border-color: var(--blue); }
-.btn--lime { background: linear-gradient(120deg, var(--lime-deep), var(--lime)); color: #101a02; }
+.btn--lime { background: linear-gradient(120deg, var(--lime-deep), var(--lime)); color: var(--on-lime); }
 .btn--lime:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 0 50px -10px rgba(180, 220, 30, 0.55); }
 .btn--danger { border-color: rgba(240, 48, 74, 0.45); color: var(--red); background: rgba(240, 48, 74, 0.08); }
 .btn--danger:not(:disabled):hover { background: rgba(240, 48, 74, 0.16); }
@@ -59,7 +59,7 @@
 .pill {
   display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.05em;
   text-transform: uppercase; padding: 0.24rem 0.65rem; border-radius: 999px; white-space: nowrap;
-  color: var(--text-muted); background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line);
+  color: var(--text-muted); background: var(--wash-3); border: 1px solid var(--line);
 }
 .pill--blue { color: var(--blue); background: rgba(46, 155, 230, 0.12); border-color: rgba(46, 155, 230, 0.3); }
 .pill--lime { color: var(--lime); background: rgba(180, 220, 30, 0.1); border-color: rgba(180, 220, 30, 0.28); }
@@ -68,7 +68,7 @@
 .pill--dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
 /* ---------- bilah progres ---------- */
-.progress { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.07); overflow: hidden; }
+.progress { height: 8px; border-radius: 999px; background: var(--wash-4); overflow: hidden; }
 .progress__bar { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue-deep), var(--blue) 55%, var(--lime)); transition: width 0.8s var(--ease-out); }
 .progress--red .progress__bar { background: linear-gradient(90deg, #a1001a, var(--red)); }
 .progress--amber .progress__bar { background: linear-gradient(90deg, #b17a10, var(--amber)); }
@@ -81,7 +81,7 @@
 .field__help { font-size: 0.76rem; color: var(--text-faint); }
 .field__error { font-size: 0.78rem; color: var(--red); }
 .input, .field input:not([type="checkbox"]):not([type="radio"]), .field textarea, .field select {
-  width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--line); border-radius: 12px;
+  width: 100%; background: var(--wash-2); border: 1px solid var(--line); border-radius: 12px;
   padding: 0.7rem 0.95rem; font-size: 0.93rem; transition: border-color 0.2s ease, background 0.2s ease;
 }
 .field textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
@@ -100,7 +100,7 @@
 /* ---------- tabel ---------- */
 .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); }
 table.table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-.table th { text-align: left; font-size: 0.7rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-faint); font-weight: 600; padding: 0.8rem 1rem; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.02); white-space: nowrap; }
+.table th { text-align: left; font-size: 0.7rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-faint); font-weight: 600; padding: 0.8rem 1rem; border-bottom: 1px solid var(--line); background: var(--wash-1); white-space: nowrap; }
 .table td { padding: 0.8rem 1rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 .table tr:last-child td { border-bottom: 0; }
 .table tbody tr { transition: background 0.2s ease; }
@@ -118,7 +118,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 .tab__count { margin-left: 0.4rem; font-size: 0.7rem; padding: 0.1rem 0.45rem; border-radius: 999px; background: var(--surface-strong); }
 
 /* ---------- dialog ---------- */
-.modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(2, 4, 9, 0.72); backdrop-filter: blur(6px); display: grid; place-items: center; padding: 1.5rem; animation: fade-up 0.25s var(--ease-out); }
+.modal-backdrop { position: fixed; inset: 0; z-index: 100; background: var(--scrim); backdrop-filter: blur(6px); display: grid; place-items: center; padding: 1.5rem; animation: fade-up 0.25s var(--ease-out); }
 .modal { width: min(640px, 100%); max-height: calc(100vh - 3rem); display: flex; flex-direction: column; background: var(--bg-overlay); border: 1px solid var(--line-strong); border-radius: var(--radius-lg); box-shadow: var(--shadow-card), 0 0 80px -30px rgba(46, 155, 230, 0.4); }
 .modal--wide { width: min(900px, 100%); }
 .modal__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.3rem 1.5rem 0.9rem; }

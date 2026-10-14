@@ -22,7 +22,7 @@
 .main { min-width: 0; display: flex; flex-direction: column; }
 .topbar {
   position: sticky; top: 0; z-index: 40; height: var(--topbar); display: flex; align-items: center; gap: 1rem; padding: 0 1.8rem;
-  background: rgba(5, 8, 15, 0.72); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line);
+  background: var(--bg-glass); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line);
 }
 .topbar__menu { display: none; }
 .topbar__ctx { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
@@ -51,7 +51,7 @@
   .shell { grid-template-columns: 1fr; }
   .sidebar { position: fixed; left: 0; top: 0; z-index: 90; width: min(300px, 86vw); transform: translateX(-102%); transition: transform 0.3s var(--ease-out); box-shadow: var(--shadow-card); }
   .sidebar.is-open { transform: none; }
-  .scrim { position: fixed; inset: 0; z-index: 80; background: rgba(2, 4, 9, 0.6); backdrop-filter: blur(3px); }
+  .scrim { position: fixed; inset: 0; z-index: 80; background: var(--scrim); backdrop-filter: blur(3px); }
   .topbar { padding: 0 1rem; }
   .topbar__menu { display: inline-flex; }
   .page { padding: 1.3rem 1rem 3rem; }
@@ -72,6 +72,8 @@
 .auth__title { font-size: clamp(2rem, 4.6vw, 3.4rem); font-weight: 800; margin-bottom: 1.1rem; }
 .auth__lead { color: var(--text-muted); font-size: 1.05rem; max-width: 50ch; margin-bottom: 2rem; }
 .auth__stats { display: flex; flex-wrap: wrap; gap: 2.2rem; border-top: 1px solid var(--line); padding-top: 1.4rem; max-width: 34rem; }
-.auth__card { padding: 2rem; border-radius: var(--radius-lg); background: rgba(10, 17, 31, 0.78); backdrop-filter: blur(14px); border: 1px solid var(--line-strong); box-shadow: var(--shadow-card), var(--glow-blue); }
+.auth__card { padding: 2rem; border-radius: var(--radius-lg); background: var(--card-glass); backdrop-filter: blur(14px); border: 1px solid var(--line-strong); box-shadow: var(--shadow-card), var(--glow-blue); }
 .auth__card h2 { font-size: 1.35rem; margin-bottom: 0.3rem; }
 @media (max-width: 860px) { .auth__wrap { grid-template-columns: 1fr; } .auth__stats { display: none; } }
+
+.auth__tema { position: absolute; top: 1rem; right: 1rem; z-index: 5; }

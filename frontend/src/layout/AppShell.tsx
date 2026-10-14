@@ -5,7 +5,7 @@ import { NAMA_PERAN, type Halaman, type Rec } from "@/shared/api/types";
 import { api } from "@/shared/api/client";
 import { useAksi, useApi } from "@/shared/lib/hooks";
 import { inisial, namaLam, waktu } from "@/shared/lib/format";
-import { Button, Icon, Logo } from "@/shared/ui";
+import { Button, Icon, Logo, TombolTema } from "@/shared/ui";
 import { NAVIGASI } from "./navigasi";
 
 function Notifikasi() {
@@ -152,6 +152,7 @@ export function AppShell() {
             <span>{aktif.instrumen ? `${namaLam(aktif.instrumen.lam)} · versi ${aktif.instrumen.kode_versi ?? "—"}` : NAMA_PERAN[aktif.peran]}</span>
           </div>
           <span className="spacer" />
+          <TombolTema />
           <Notifikasi />
           <MenuPengguna />
         </header>

@@ -6,6 +6,15 @@
     <title>SIMAK — Sistem Informasi Manajemen Akreditasi</title>
     <meta name="description" content="Satu basis data, dua instrumen akreditasi: LAMSAMA dan LAM INFOKOM." />
     <meta name="theme-color" content="#05080f" />
+    <script>
+      // Terapkan tema tersimpan sebelum cat pertama agar tidak berkedip (logika yang sama: src/shared/lib/tema.ts).
+      try {
+        if (localStorage.getItem("simak.tema") === "terang") {
+          document.documentElement.dataset.tema = "terang";
+          document.querySelector('meta[name="theme-color"]').setAttribute("content", "#f3f6fb");
+        }
+      } catch (e) {}
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

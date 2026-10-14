@@ -56,7 +56,7 @@ function KartuProdi({ p }: { p: Rec }) {
       )}
 
       {sim && p.siklus_id && (
-        <div className="card" style={{ padding: "0.8rem 1rem", background: "rgba(255,255,255,0.02)" }}>
+        <div className="card" style={{ padding: "0.8rem 1rem", background: "var(--wash-1)" }}>
           <div className="metric__label">Simulasi skor · estimasi internal</div>
           <div className="row row--between" style={{ marginTop: "0.25rem" }}>
             <strong className="score">{sim.prediksi_peringkat ?? "Belum dihitung"}</strong>

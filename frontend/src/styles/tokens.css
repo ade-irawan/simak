@@ -17,6 +17,17 @@
   --bg-raised: #0a111f;
   --bg-overlay: #0d1626;
   --surface: rgba(255, 255, 255, 0.035);
+  --wash-1: rgba(255, 255, 255, 0.02);
+  --wash-2: rgba(255, 255, 255, 0.03);
+  --wash-3: rgba(255, 255, 255, 0.04);
+  --wash-4: rgba(255, 255, 255, 0.07);
+  --bg-glass: rgba(5, 8, 15, 0.72);
+  --card-glass: rgba(10, 17, 31, 0.78);
+  --code-bg: #070d1a;
+  --scrim: rgba(2, 4, 9, 0.72);
+  --on-lime: #101a02;
+  --grad-blue-end: #7cc4f2;
+  --grad-lime-end: #dff58a;
   --surface-hover: rgba(255, 255, 255, 0.06);
   --surface-strong: rgba(255, 255, 255, 0.085);
   --line: rgba(255, 255, 255, 0.09);
@@ -51,4 +62,46 @@
   --dur: 0.5s;
   --shadow-card: 0 20px 50px -24px rgba(0, 0, 0, 0.65);
   --glow-blue: 0 0 60px -12px rgba(46, 155, 230, 0.45);
+
+  color-scheme: dark;
+}
+
+/* Tema terang: hanya menimpa token. Pilihan disimpan di <html data-tema> (lihat shared/lib/tema.ts). */
+:root[data-tema="terang"] {
+  --blue: #0a78c8;
+  --blue-deep: #005a9e;
+  --lime: #5c8a00;
+  --lime-deep: #6ea10f;
+  --red: #d1122c;
+  --red-deep: #b00e24;
+  --amber: #a96a00;
+
+  --bg: #f3f6fb;
+  --bg-raised: #ffffff;
+  --bg-overlay: #ffffff;
+  --surface: rgba(10, 30, 60, 0.035);
+  --surface-hover: rgba(10, 30, 60, 0.06);
+  --surface-strong: rgba(10, 30, 60, 0.09);
+  --line: rgba(10, 30, 60, 0.12);
+  --line-strong: rgba(10, 30, 60, 0.22);
+  --wash-1: rgba(10, 30, 60, 0.025);
+  --wash-2: rgba(10, 30, 60, 0.03);
+  --wash-3: rgba(10, 30, 60, 0.04);
+  --wash-4: rgba(10, 30, 60, 0.09);
+  --bg-glass: rgba(243, 246, 251, 0.82);
+  --card-glass: rgba(255, 255, 255, 0.86);
+  --code-bg: #eaeff7;
+  --scrim: rgba(16, 28, 48, 0.45);
+  --on-lime: #ffffff;
+  --grad-blue-end: #2e9be6;
+  --grad-lime-end: #8cc63e;
+
+  --text: #0b1730;
+  --text-muted: #4a5a73;
+  --text-faint: #5f6f88;
+
+  --shadow-card: 0 18px 40px -22px rgba(16, 38, 76, 0.28);
+  --glow-blue: 0 8px 28px -10px rgba(0, 96, 168, 0.4);
+
+  color-scheme: light;
 }

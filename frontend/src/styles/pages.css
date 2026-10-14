@@ -4,7 +4,7 @@
 .prodi-card__name { font-family: var(--font-display); font-weight: 700; font-size: 1.12rem; }
 .risk { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.78rem; font-weight: 600; }
 .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; }
-.stat-cell { padding: 0.6rem 0.7rem; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, 0.02); }
+.stat-cell { padding: 0.6rem 0.7rem; border: 1px solid var(--line); border-radius: 12px; background: var(--wash-1); }
 .stat-cell b { display: block; font-family: var(--font-display); font-size: 1.15rem; }
 .stat-cell span { font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); }
 .reasons { font-size: 0.8rem; color: var(--text-muted); padding-left: 1rem; list-style: disc; }
@@ -21,7 +21,7 @@
 .autosave { font-size: 0.76rem; color: var(--text-faint); display: inline-flex; align-items: center; gap: 0.4rem; }
 .autosave--ok { color: var(--lime); }
 .autosave--err { color: var(--red); }
-.source-card { padding: 0.9rem 1rem; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, 0.02); }
+.source-card { padding: 0.9rem 1rem; border: 1px solid var(--line); border-radius: 14px; background: var(--wash-1); }
 .source-card--empty { border-color: rgba(245, 181, 61, 0.4); background: rgba(245, 181, 61, 0.05); }
 .source-card ul { margin-top: 0.5rem; padding-left: 1rem; list-style: disc; color: var(--text-muted); font-size: 0.85rem; }
 .dropzone { border: 1.5px dashed var(--line-strong); border-radius: 14px; padding: 1.2rem; text-align: center; color: var(--text-muted); transition: border-color 0.2s, background 0.2s; }
@@ -39,7 +39,7 @@
 .phase--run { border-color: rgba(46, 155, 230, 0.4); }
 .phase--lock { opacity: 0.75; }
 @media (max-width: 900px) { .phases { grid-template-columns: 1fr 1fr; } .stat-row { grid-template-columns: repeat(2, 1fr); } }
-.json { background: #070d1a; border: 1px solid var(--line); border-radius: 12px; padding: 0.8rem 1rem; font-family: var(--font-mono); font-size: 0.78rem; overflow: auto; max-height: 320px; color: var(--text-muted); white-space: pre-wrap; }
+.json { background: var(--code-bg); border: 1px solid var(--line); border-radius: 12px; padding: 0.8rem 1rem; font-family: var(--font-mono); font-size: 0.78rem; overflow: auto; max-height: 320px; color: var(--text-muted); white-space: pre-wrap; }
 .readonly-banner { border-color: rgba(180, 220, 30, 0.35); background: rgba(180, 220, 30, 0.06); }
 .toolbar { display: flex; gap: 0.7rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
 .toolbar .input { max-width: 280px; }

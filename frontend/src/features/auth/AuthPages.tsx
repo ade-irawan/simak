@@ -3,13 +3,14 @@ import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react
 import { api, ApiError } from "@/shared/api/client";
 import { useAuth } from "@/shared/auth/AuthProvider";
 import { useToast } from "@/shared/ui";
-import { Alert, Button, ErrorBox, Eyebrow, Field, Icon, Logo } from "@/shared/ui";
+import { Alert, Button, ErrorBox, Eyebrow, Field, Icon, Logo, TombolTema } from "@/shared/ui";
 
 function KerangkaAuth({ judul, sub, children }: { judul: string; sub?: string; children: React.ReactNode }) {
   return (
     <div className="auth">
       <div className="auth__grid" />
       <div className="auth__glow" />
+      <TombolTema className="auth__tema" />
       <div className="auth__wrap">
         <div>
           <div className="brand" style={{ padding: 0, marginBottom: "2rem" }}>
