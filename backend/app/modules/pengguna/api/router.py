@@ -10,6 +10,7 @@ from app.core.unit_of_work import UnitOfWork
 from app.dependencies import butuh, get_uow
 from app.modules.pengguna.api.schemas import (
     AlasanIn,
+    EmailBaruIn,
     KunciOut,
     PenggunaIn,
     PenggunaOut,
@@ -67,6 +68,11 @@ async def ubah_pengguna(
     pengguna_id: UUID, data: PenggunaPatch, pemanggil: Pemanggil = Depends(butuh(D)), svc: ManajemenAkun = Depends(_akun)
 ):
     return await svc.ubah(pemanggil, pengguna_id, data)
+
+
+@router.post("/pengguna/{pengguna_id}/atur-email", response_model=PenggunaOut)
+async def atur_email(pengguna_id: UUID, data: EmailBaruIn, pemanggil: Pemanggil = Depends(butuh(IT)), svc: ManajemenAkun = Depends(_akun)):
+    return await svc.atur_email(pemanggil, pengguna_id, str(data.email))
 
 
 @router.post("/pengguna/{pengguna_id}/buka-kunci", response_model=KunciOut)

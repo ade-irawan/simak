@@ -72,6 +72,10 @@ class SandiBaruIn(BaseModel):
     sandi_baru: str = Field(min_length=1, description="Sandi sementara; pengguna wajib menggantinya saat masuk")
 
 
+class EmailBaruIn(BaseModel):
+    email: Surel
+
+
 class KunciOut(BaseModel):
     id: UUID
     status: StatusPengguna

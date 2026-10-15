@@ -159,7 +159,8 @@ Respons `423` (terkunci):
 | PATCH | `/pengguna/{id}` | D | Mengubah nama atau status |
 | POST | `/pengguna/{id}/buka-kunci` | IT | Membuka kunci akun |
 | POST | `/pengguna/{id}/reset-sandi` | IT | Mengirim tautan reset sandi |
-| POST | `/pengguna/{id}/atur-sandi` | IT | Menetapkan sandi sementara (`{"sandi_baru"}`, 204). Pengguna wajib menggantinya saat masuk; sesi lama dicabut, kunci dibuka. Ditolak untuk akun Dekan dan akun sendiri |
+| POST | `/pengguna/{id}/atur-email` | IT | Mengganti alamat surel akun mana pun, termasuk akun sendiri (`{"email"}`). Tautan reset/buka kunci yang belum dipakai dihanguskan; sesi pemilik dicabut kecuali untuk akun sendiri. Surel lama dan baru dicatat di audit |
+| POST | `/pengguna/{id}/atur-sandi` | IT | Menetapkan sandi sementara (`{"sandi_baru"}`, 204). Pengguna wajib menggantinya saat masuk; sesi lama dicabut, kunci dibuka. Berlaku untuk semua akun, termasuk Dekan yang lupa sandi; ditolak untuk akun sendiri |
 | POST | `/pengguna/{id}/nonaktifkan` | D, IT | Menonaktifkan akun |
 | GET | `/penugasan-peran` | D, IT; K hanya asesor prodinya | Daftar penugasan. Saringan: `peran`, `prodi_id`, `status` |
 | POST | `/penugasan-peran` | D; IT (kecuali peran Dekan; asesor hanya berstatus usulan); K hanya untuk mengusulkan asesor | Menambah penugasan |

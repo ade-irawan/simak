@@ -34,6 +34,7 @@ function AkunTab() {
   const [baru, setBaru] = useState(false);
   const [aksi, setAksi] = useState<{ jenis: "buka" | "reset" | "nonaktif"; akun: Rec } | null>(null);
   const [sandi, setSandi] = useState<Rec | null>(null);
+  const [surel, setSurel] = useState<Rec | null>(null);
   const { profil } = useAuth();
   const cari = useDebounced(q);
   const data = useApi<Halaman<Rec>>("/pengguna", { q: cari, peran, terkunci, page, per_page: 15 }, { keep: true });
@@ -45,7 +46,8 @@ function AkunTab() {
     { kunci: "aksi", judul: "", render: (a) => (
       <div className="row" style={{ justifyContent: "flex-end", gap: "0.3rem" }}>
         {punya("admin_it") && <Button size="icon" variant="ghost" title="Buka kunci" onClick={() => setAksi({ jenis: "buka", akun: a })}><Icon name="unlock" size={15} /></Button>}
-        {punya("admin_it") && a.id !== profil?.id && !a.peran.some((p: Rec) => p.peran === "dekan" && p.status !== "dicabut") && <Button size="icon" variant="ghost" title="Atur sandi sementara" onClick={() => setSandi(a)}><Icon name="edit" size={15} /></Button>}
+        {punya("admin_it") && a.id !== profil?.id && <Button size="icon" variant="ghost" title="Atur sandi sementara" onClick={() => setSandi(a)}><Icon name="edit" size={15} /></Button>}
+        {punya("admin_it") && <Button size="icon" variant="ghost" title="Ganti alamat surel" onClick={() => setSurel(a)}><Icon name="inbox" size={15} /></Button>}
         {punya("admin_it") && <Button size="icon" variant="ghost" title="Kirim tautan reset sandi" onClick={() => setAksi({ jenis: "reset", akun: a })}><Icon name="refresh" size={15} /></Button>}
         {a.status === "aktif" && <Button size="icon" variant="danger" title="Nonaktifkan" onClick={() => setAksi({ jenis: "nonaktif", akun: a })}><Icon name="x" size={15} /></Button>}
       </div>
@@ -64,6 +66,7 @@ function AkunTab() {
       {baru && <AkunBaruModal onTutup={() => setBaru(false)} />}
       {aksi && <AksiAkunModal {...aksi} onTutup={() => setAksi(null)} />}
       {sandi && <AturSandiModal akun={sandi} onTutup={() => setSandi(null)} />}
+      {surel && <AturEmailModal akun={surel} onTutup={() => setSurel(null)} />}
     </div>
   );
 }
@@ -93,6 +96,23 @@ function AturSandiModal({ akun, onTutup }: { akun: Rec; onTutup: () => void }) {
           <input type="text" style={{ flex: 1 }} value={sandi} onChange={(e) => setSandi(e.target.value)} autoComplete="off" spellCheck={false} />
           <Button variant="ghost" onClick={() => setSandi(sandiAcak())}>Buat acak</Button>
         </div>
+      </Field>
+      {simpan.error && <ErrorBox error={simpan.error} />}
+    </Modal>
+  );
+}
+
+function AturEmailModal({ akun, onTutup }: { akun: Rec; onTutup: () => void }) {
+  const { profil } = useAuth();
+  const [email, setEmail] = useState(akun.email);
+  const sendiri = akun.id === profil?.id;
+  const simpan = useAksi(() => api.post(`/pengguna/${akun.id}/atur-email`, { email }), { sukses: "Alamat surel diganti (tercatat di audit)", invalidate: INV, onSuccess: onTutup });
+  const valid = /^\S+@\S+\.\S+$/.test(email) && email.trim().toLowerCase() !== akun.email.toLowerCase();
+  return (
+    <Modal judul="Ganti alamat surel" onTutup={onTutup} footer={<><Button variant="ghost" onClick={onTutup}>Batal</Button><Button disabled={!valid || simpan.isPending} onClick={() => simpan.mutate()}>Simpan surel</Button></>}>
+      <p className="muted" style={{ marginBottom: "1rem" }}>{akun.nama}. Surel dipakai untuk masuk, sehingga pengguna harus masuk dengan alamat baru. Tautan reset/buka kunci yang belum dipakai dihanguskan{sendiri ? "." : " dan semua sesi pengguna dicabut."}</p>
+      <Field label="Alamat surel baru" wajib>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" spellCheck={false} />
       </Field>
       {simpan.error && <ErrorBox error={simpan.error} />}
     </Modal>

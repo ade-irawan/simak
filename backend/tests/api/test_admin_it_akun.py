@@ -81,11 +81,34 @@ async def test_admin_it_mengatur_sandi_sementara(dunia, klien):
     assert (await klien.post("/api/v1/auth/login", json={"email": "k_kimia@uji.test", "password": SANDI})).status_code == 401
     masuk = await klien.post("/api/v1/auth/login", json={"email": "k_kimia@uji.test", "password": SANDI_BARU})
     assert masuk.status_code == 200 and masuk.json()["pengguna"]["wajib_ganti_sandi"] is True
-    # pagar: bukan untuk akun Dekan, akun sendiri, atau peran selain Admin IT
-    assert (await dunia.post("it", f"/pengguna/{dunia.id['dekan']}/atur-sandi", json={"sandi_baru": SANDI_BARU})).status_code == 403
+    # Dekan yang lupa sandi dapat dibantu Admin IT; ia wajib menggantinya saat masuk
+    assert (await dunia.post("it", f"/pengguna/{dunia.id['dekan']}/atur-sandi", json={"sandi_baru": SANDI_BARU})).status_code == 204
+    masuk = await klien.post("/api/v1/auth/login", json={"email": "dekan@uji.test", "password": SANDI_BARU})
+    assert masuk.status_code == 200 and masuk.json()["pengguna"]["wajib_ganti_sandi"] is True
+    # pagar: bukan untuk akun sendiri atau peran selain Admin IT
     assert (await dunia.post("it", f"/pengguna/{dunia.id['it']}/atur-sandi", json={"sandi_baru": SANDI_BARU})).status_code == 422
     assert (await dunia.post("dekan", f"/pengguna/{target}/atur-sandi", json={"sandi_baru": SANDI_BARU})).status_code == 403
     # tercatat di log audit
     from tests.api.test_auth import aksi_audit
 
-    assert await aksi_audit("pengguna.atur_sandi") == 1
+    assert await aksi_audit("pengguna.atur_sandi") == 2
+
+
+async def test_admin_it_mengganti_email_akun_mana_pun(dunia, klien):
+    target = dunia.id["k_kimia"]
+    # selain Admin IT ditolak; email ganda dan email yang sama ditolak
+    assert (await dunia.post("dekan", f"/pengguna/{target}/atur-email", json={"email": "baru@uji.test"})).status_code == 403
+    assert (await dunia.post("it", f"/pengguna/{target}/atur-email", json={"email": "dekan@uji.test"})).status_code == 422
+    assert (await dunia.post("it", f"/pengguna/{target}/atur-email", json={"email": "k_kimia@uji.test"})).status_code == 422
+    assert (await dunia.post("it", f"/pengguna/{target}/atur-email", json={"email": "bukan-email"})).status_code == 422
+    # akun biasa, akun Dekan, dan akun sendiri semuanya boleh
+    r = await dunia.post("it", f"/pengguna/{target}/atur-email", json={"email": "Baru.Kimia@Uji.test"})
+    assert r.status_code == 200 and r.json()["email"] == "baru.kimia@uji.test"
+    assert (await dunia.post("it", f"/pengguna/{dunia.id['dekan']}/atur-email", json={"email": "dekan.baru@uji.test"})).status_code == 200
+    assert (await dunia.post("it", f"/pengguna/{dunia.id['it']}/atur-email", json={"email": "it.baru@uji.test"})).status_code == 200
+    # surel lama tidak lagi bisa dipakai masuk; surel baru bisa
+    assert (await klien.post("/api/v1/auth/login", json={"email": "k_kimia@uji.test", "password": SANDI})).status_code == 401
+    assert (await klien.post("/api/v1/auth/login", json={"email": "baru.kimia@uji.test", "password": SANDI})).status_code == 200
+    from tests.api.test_auth import aksi_audit
+
+    assert await aksi_audit("pengguna.atur_email") == 3

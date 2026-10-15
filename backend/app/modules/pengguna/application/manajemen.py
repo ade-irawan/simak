@@ -2,8 +2,8 @@
 
 * Dekan: kebijakan (siapa berperan apa, cakupan prodi, aktivasi asesor) — US-G2, §3.4.
 * Admin IT: operasi akun — membuat akun beserta penugasan perannya, mengatur/reset sandi, buka kunci, nonaktif —
-  tanpa akses konten (US-A1). Pagar pemisahan tugas: Admin IT tidak menetapkan peran Dekan, tidak mengubah sandi akun
-  Dekan, dan penugasan asesor darinya hanya berstatus usulan sampai Dekan menyetujui (EC-26/28).
+  tanpa akses konten (US-A1). Admin IT boleh mengatur sandi sementara akun mana pun (termasuk Dekan yang lupa sandi),
+  tetapi tidak menetapkan peran Dekan, dan penugasan asesor darinya hanya berstatus usulan sampai Dekan menyetujui (EC-26/28).
 * Kaprodi: hanya mengusulkan asesor untuk prodinya.
 """
 
@@ -246,13 +246,39 @@ class ManajemenAkun:
         wajib_sandi_kuat(sandi_baru)
         async with self.uow:
             p = await self._ambil(pengguna_id)
-            if await self._memegang_peran(p.id, Peran.DEKAN):
-                raise AksesDitolak(alasan="admin_it_tidak_mengubah_sandi_dekan")
             p.password_hash = hash_sandi(sandi_baru)
             p.wajib_ganti_sandi = True
             p.jumlah_gagal_login, p.terkunci_sampai = 0, None
             await tokens.cabut_semua_refresh(self.session, p.id)
             await audit.catat(self.session, "pengguna.atur_sandi", pemanggil=pemanggil, entitas="pengguna", entitas_id=p.id)
+
+    async def atur_email(self, pemanggil: Pemanggil, pengguna_id: UUID, email_baru: str) -> dict[str, Any]:
+        """Admin IT mengganti alamat surel akun mana pun, termasuk akunnya sendiri. Tautan lama yang belum dipakai
+        dihanguskan; sesi pemilik akun dicabut kecuali bila Admin IT mengubah akunnya sendiri."""
+        pemanggil.wajib(IT)
+        email_baru = email_baru.strip().lower()
+        async with self.uow:
+            p = await self._ambil(pengguna_id)
+            email_lama = p.email
+            if email_baru == email_lama.lower():
+                raise ValidasiGagal("Alamat surel sama dengan yang sekarang.", details=[{"kolom": "email"}])
+            p.email = email_baru
+            try:
+                await self.session.flush()
+            except IntegrityError as exc:
+                raise ValidasiGagal("Email sudah terdaftar.", details=[{"kolom": "email"}]) from exc
+            await tokens.hanguskan_token_akun(self.session, p.id)
+            if p.id != pemanggil.id:
+                await tokens.cabut_semua_refresh(self.session, p.id)
+            await audit.catat(
+                self.session,
+                "pengguna.atur_email",
+                pemanggil=pemanggil,
+                entitas="pengguna",
+                entitas_id=p.id,
+                detail={"email_lama": email_lama, "email_baru": email_baru},
+            )
+        return await self.rincian(pengguna_id)
 
     async def reset_sandi(self, pemanggil: Pemanggil, pengguna_id: UUID) -> None:
         pemanggil.wajib(IT)

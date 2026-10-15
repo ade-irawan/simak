@@ -156,7 +156,7 @@ oleh Kaprodi, asesor hanya-baca pada **versi laporan yang disetujui** dan berjen
 di use case dan diuji per peran.
 
 Admin IT mengelola akun: membuat pengguna beserta peran dan prodinya, menetapkan sandi sementara (pengguna wajib menggantinya saat masuk), membuka kunci, dan menonaktifkan.
-Pagar pemisahan tugas: Admin IT tidak dapat menetapkan peran Dekan atau mengubah sandi akun Dekan, dan asesor dari Admin IT hanya berstatus usulan sampai Dekan menyetujui. Semua tindakan tercatat di log audit.
+Pagar pemisahan tugas: Admin IT dapat mengganti alamat surel semua akun, termasuk akunnya sendiri (surel lama dan baru tercatat di audit). Admin IT tidak dapat menetapkan atau mencabut peran Dekan (tetapi dapat mengatur sandi sementara akun Dekan yang lupa sandi; Dekan wajib menggantinya saat masuk), dan asesor dari Admin IT hanya berstatus usulan sampai Dekan menyetujui. Semua tindakan tercatat di log audit.
 
 ## Data awal
 

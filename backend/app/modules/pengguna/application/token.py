@@ -83,6 +83,13 @@ async def cabut_semua_refresh(session: AsyncSession, pengguna_id: UUID) -> None:
     )
 
 
+async def hanguskan_token_akun(session: AsyncSession, pengguna_id: UUID) -> None:
+    """Menghanguskan tautan reset/buka kunci yang belum dipakai (mis. setelah alamat surel diganti)."""
+    await session.execute(
+        update(TokenAkun).where(TokenAkun.pengguna_id == pengguna_id, TokenAkun.dipakai_pada.is_(None)).values(dipakai_pada=_sekarang())
+    )
+
+
 async def putar_refresh(session: AsyncSession, token: str, ip: str | None, user_agent: str | None) -> tuple[UUID, str]:
     """Menukar token penyegar lama dengan yang baru. Pemakaian ulang token yang sudah dicabut
     dianggap pencurian: seluruh token penyegar pengguna itu dicabut."""
