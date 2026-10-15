@@ -22,6 +22,7 @@ __all__ = [
     "ambil_prodi",
     "daftar_prodi",
     "ambil_tahun_akademik",
+    "daftar_tahun_akademik",
     "tahun_akademik_aktif",
     "rentang_tahun",
 ]
@@ -64,6 +65,10 @@ async def ambil_tahun_akademik(session: AsyncSession, tahun_id: UUID) -> TahunAk
     if ta is None:
         raise TidakDitemukan("Tahun akademik tidak ditemukan.")
     return ta
+
+
+async def daftar_tahun_akademik(session: AsyncSession) -> list[TahunAkademik]:
+    return list((await session.execute(select(TahunAkademik).order_by(TahunAkademik.tanggal_mulai.desc()))).scalars())
 
 
 async def tahun_akademik_aktif(session: AsyncSession) -> TahunAkademik | None:

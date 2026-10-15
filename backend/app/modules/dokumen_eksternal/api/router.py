@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Query, Response, UploadFile
 
 from app.core.exceptions import ValidasiGagal
 from app.core.pagination import ParamHalaman
@@ -49,6 +49,16 @@ async def isi_indikator(
     dokumen_id: UUID, data: list[IndikatorIn], pemanggil: Pemanggil = Depends(butuh(SF)), svc: LayananDokumenEksternal = Depends(_svc)
 ):
     return await svc.isi_indikator(pemanggil, dokumen_id, data)
+
+
+@router.get("/dokumen-eksternal/indikator/impor/templat")
+async def templat_impor_indikator(
+    format: str = Query("xlsx", pattern="^(xlsx|csv)$"),
+    pemanggil: Pemanggil = Depends(butuh(SF)),
+    svc: LayananDokumenEksternal = Depends(_svc),
+):
+    isi, tipe, nama = await svc.templat_indikator(format)
+    return Response(isi, media_type=tipe, headers={"Content-Disposition": f'attachment; filename="{nama}"'})
 
 
 @router.post("/dokumen-eksternal/{dokumen_id}/indikator/impor", status_code=202)

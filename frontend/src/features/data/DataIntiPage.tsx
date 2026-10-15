@@ -5,7 +5,7 @@ import type { Halaman as HalamanApi, Rec } from "@/shared/api/types";
 import { useAuth } from "@/shared/auth/AuthProvider";
 import { useAksi, useApi, useDebounced } from "@/shared/lib/hooks";
 import {
-  Alert, Button, Empty, ErrorBox, Field, FormFields, Icon, Konfirmasi, ListEditor, Modal, Muat, PageHead, Pager, Pill, StatusPill, Tabel, keMuatan, validasiWajib,
+  Alert, Button, Empty, ErrorBox, Field, FormFields, Icon, Konfirmasi, ListEditor, Modal, Muat, PageHead, Pager, Pill, StatusPill, Tabel, TombolTemplat, keMuatan, validasiWajib,
   type Kolom,
 } from "@/shared/ui";
 import { PilihBuktiModal } from "../bukti/BuktiPage";
@@ -267,7 +267,11 @@ function ImporModal({ cfg, onTutup }: { cfg: SumberCfg; onTutup: () => void }) {
   const hasil = unggah.data;
   return (
     <Modal judul={`Impor ${cfg.judul}`} onTutup={onTutup} lebar footer={<><Button variant="ghost" onClick={onTutup}>Tutup</Button><Button disabled={!berkas || unggah.isPending} onClick={() => unggah.mutate()}>{unggah.isPending && <span className="spinner" />} Impor</Button></>}>
-      <Alert jenis="info" judul="Format berkas">CSV atau XLSX, baris pertama = judul kolom: <span className="mono">{cfg.kolomImpor}</span>. Kolom <span className="mono">prodi_kode</span> menerima kode prodi (pisahkan koma bila lebih dari satu). {cfg.petunjukImpor}</Alert>
+      <Alert jenis="info" judul="Mulai dari templat">
+        Unduh templat, isi mulai baris 2, lalu unggah kembali. Templat memuat petunjuk tiap kolom serta daftar kode prodi dan tahun akademik yang sah.
+        <div style={{ margin: "0.6rem 0" }}><TombolTemplat path={`/${cfg.path}/impor/templat`} namaDasar={`templat-impor-${cfg.path}`} /></div>
+        Kolom berkas: <span className="mono">{cfg.kolomImpor}</span>. {cfg.petunjukImpor}
+      </Alert>
       <div style={{ margin: "1rem 0" }}><Field label="Berkas"><input type="file" accept=".csv,.xlsx" onChange={(e) => setBerkas(e.target.files?.[0] ?? null)} /></Field>
         <label className="check"><input type="checkbox" checked={atomik} onChange={(e) => setAtomik(e.target.checked)} /> Batalkan semuanya bila ada baris bermasalah</label></div>
       {unggah.error && <ErrorBox error={unggah.error} />}

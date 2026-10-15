@@ -230,6 +230,7 @@ Asesor hanya dapat diaktifkan bila laporan prodi tersebut berstatus `disetujui`.
 | GET | `/instrumen/{id}` | D, K, SP, SF | Versi instrumen, kriteria, dan aturan peringkat |
 | GET | `/instrumen/{id}/butir` | D, K, SP, SF | Daftar butir. Saringan: `kriteria`, `tahap_ppepp`, `jenis_ipo` |
 | GET | `/butir-instrumen/{id}` | D, K, SP, SF | Butir, rubrik, ambang, skema narasi |
+| GET | `/instrumen/impor/templat` | SF | Mengunduh templat impor instrumen (XLSX) |
 | POST | `/instrumen/impor` | SF | Mengimpor versi instrumen dari XLSX sebagai draf (`202`) |
 | PATCH | `/butir-instrumen/{id}` | SF | Menyunting butir, rubrik, atau skema narasi pada instrumen berstatus draf |
 | POST | `/instrumen/{id}/aktifkan` | D | Menyetujui dan mengaktifkan versi instrumen |
@@ -446,9 +447,23 @@ Semua sumber daya data inti mengikuti satu pola.
 | GET | `/{sumber}/{id}/bukti` | D, K, SP, SF | Bukti terlampir |
 | PUT, DELETE | `/{sumber}/{id}/bukti/{bukti_id}` | K, SP, SF ¹ | Melampirkan atau melepas bukti |
 | GET | `/{sumber}/{id}/butir` | D, K, SP, SF | Butir instrumen yang merujuk data ini; dipakai untuk peringatan dampak sebelum mengubah atau menghapus (EC-05) |
-| POST | `/{sumber}/impor` | SP, SF | Impor XLSX atau CSV (`202`) |
+| GET | `/{sumber}/impor/templat` | SP, SF | Mengunduh templat impor. `?format=xlsx` (bawaan) atau `csv`. Lihat bagian "Templat impor" di bawah |
+| POST | `/{sumber}/impor` | SP, SF | Impor XLSX atau CSV (`202`). Rujukan prodi memakai kolom `prodi_kode`, rujukan tahun memakai kolom `tahun_akademik` (kode, mis. `2025/2026`); kolom `tahun_akademik_id` (UUID) tetap diterima |
 
 Data bersama lintas prodi (dosen, sarana fakultas, keuangan UPPS) dikelola SF.
+
+#### Templat impor
+
+`GET /{sumber}/impor/templat` mengembalikan berkas yang dapat langsung diisi. Daftar kolomnya diturunkan dari skema Pydantic yang sama dengan validasi impor, sehingga kolom, status wajib, dan pilihan nilai tidak dapat menyimpang dari aturan sebenarnya. XLSX berisi empat jenis lembar:
+
+| Lembar | Isi |
+|---|---|
+| `data` | Lembar pertama dan satu-satunya yang dibaca importer. Hanya baris judul; kolom wajib berlatar oranye, opsional biru |
+| `petunjuk` | Langkah pengisian dan tabel kolom (wajib, tipe, pilihan nilai, batas angka, nilai bawaan) |
+| `contoh` | Satu baris terisi. Terpisah dari `data` agar tidak ikut terimpor |
+| `prodi`, `tahun_akademik` | Kode yang sah dari basis data, untuk kolom `prodi_kode` dan `tahun_akademik` |
+
+Bentuk CSV hanya berisi baris judul (UTF-8 dengan BOM). Medan bersarang (daftar dosen, penulis, afiliasi) dan rujukan UUID lain tidak dapat diimpor lewat berkas datar sehingga tidak ada di templat. Kode tahun akademik yang tidak dikenal dilaporkan per baris: `Tahun akademik tidak dikenal: …`.
 
 ### `POST /publikasi`
 
@@ -693,6 +708,7 @@ Tahap `penetapan` tidak dapat diubah lewat endpoint ini; bagi Kaprodi tahap itu 
 | POST | `/dokumen-eksternal` | SF | Mencatat dokumen dari Direktorat Kemahasiswaan |
 | PATCH | `/dokumen-eksternal/{id}` | SF | Mengubah metadata |
 | PUT | `/dokumen-eksternal/{id}/indikator` | SF | Mengisi indikator secara manual |
+| GET | `/dokumen-eksternal/indikator/impor/templat` | SF | Mengunduh templat impor indikator (`?format=xlsx` atau `csv`) |
 | POST | `/dokumen-eksternal/{id}/indikator/impor` | SF | Impor indikator dari CSV atau XLSX (`202`) |
 | GET | `/prodi/{id}/indikator-eksternal` | D, K, SP, SF | Indikator tracer dan kepuasan satu prodi |
 

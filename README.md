@@ -162,6 +162,16 @@ Pagar pemisahan tugas: Admin IT dapat mengganti alamat surel semua akun, termasu
 
 `make naik` memuat `db/seed.sql` (fakultas, LAM, tiga prodi, kerangka kriteria dan peringkat, satu butir contoh per instrumen). Instrumen itu berstatus **draf**.
 Butir/rubrik resmi IAPS dimuat Staf Admin Fakultas lewat **Instrumen & pemetaan → Impor instrumen (XLSX)** (templat tersedia di halaman itu), lalu disetujui Dekan.
+### Mengisi data inti lewat impor
+
+Di setiap halaman **Data inti Tridharma** (Dosen, Mahasiswa, Lulusan, dst.) klik **Impor CSV/XLSX**, lalu:
+
+1. Klik **Unduh templat XLSX** (atau CSV). Buka lembar `petunjuk` untuk arti tiap kolom dan `prodi`/`tahun_akademik` untuk kode yang sah.
+2. Isi lembar `data` mulai baris 2; jangan mengubah judul kolom. Kolom oranye wajib diisi.
+3. Simpan, unggah di jendela impor. Baris bermasalah dilaporkan dengan nomornya; centang "Batalkan semuanya" bila ingin semua-atau-tidak-sama-sekali.
+
+Hanya Staf Admin Prodi dan Staf Admin Fakultas yang dapat mengimpor. Impor indikator tracer/kepuasan (Staf Admin Fakultas) memakai alur yang sama di halaman **Tracer & kepuasan**.
+
 `make seed-demo` membuat versi terpisah `3.1-demo` dan `2.1-demo` (teks butir generik, bukan isi resmi) agar bisa mencoba alur penuh tanpa mengotori instrumen resmi.
 
 ## Pengembangan dan pengujian
@@ -181,6 +191,7 @@ Frontend: `cd frontend && npm install && npm run dev` (proxy `/api` ke `localhos
 - **"Microservices"**: dokumen arsitektur memutuskan monolit modular; kebutuhan Docker dipenuhi dengan memisahkan proses (api, worker, beat, frontend, proxy, penyimpanan) ke kontainer sendiri. Modul sudah berbatas jelas bila kelak ada yang perlu dipisah.
 - **Frontend** memakai CSS token buatan sendiri (mengikuti cdscan), bukan Tailwind + shadcn/ui yang disebut di dokumen — agar tampilan setia pada gaya rujukan tanpa dependensi UI.
 - **Cuplikan laporan** disusun sinkron saat pengajuan (ukurannya kecil), bukan lewat tugas Celery; ekspor dokumen, draf LLM, dan link-checker tetap di Celery.
+- **Templat impor** diunduh dari jendela impor tiap halaman data (juga impor indikator eksternal dan impor instrumen). Kolomnya dibangkitkan dari skema validasi, jadi selalu sesuai aturan. Rujukan prodi dan tahun akademik memakai kode yang terbaca (`KIMIA`, `2025/2026`), bukan UUID.
 - **Impor** CSV/XLSX diproses sinkron dan mengembalikan laporan baris (bentuk respons sama dengan tugas `202` pada spesifikasi).
 - **MinIO** memakai image Chainguard (`chainguard/minio`) karena image resmi `minio/minio` tidak tersedia di Docker Hub; ganti di `docker-compose.yml` bila perlu.
 - **Aturan LAMSAMA**: dokumen hanya memberi ambang per butir + tanda syarat perlu; penilai menganggap peringkat tercapai bila semua ambangnya terpenuhi (toleransi dapat diatur lewat `syarat.toleransi` pada peringkat). Sesuaikan bila pedoman resmi menetapkan aturan agregasi lain.

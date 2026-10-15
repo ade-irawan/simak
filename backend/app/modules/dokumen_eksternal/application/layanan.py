@@ -17,6 +17,7 @@ from app.core.exceptions import AksesDitolak, TidakDitemukan, ValidasiGagal
 from app.core.pagination import ParamHalaman, halaman
 from app.core.permissions import SF, SP, D, K, Pemanggil
 from app.core.unit_of_work import UnitOfWork
+from app.infrastructure.documents.templat_impor import TIPE_CSV, TIPE_XLSX, KolomImpor, buat_csv, buat_xlsx
 from app.modules.bukti import public as bukti
 from app.modules.dokumen_eksternal.api.schemas import IndikatorIn
 from app.modules.dokumen_eksternal.infrastructure.models import (
@@ -229,6 +230,50 @@ class LayananDokumenEksternal:
                 detail={"jumlah": len(baris)},
             )
         return {"id": d.id, "baris_berhasil": len(baris), "butir_dibebaskan": dibebaskan}
+
+    async def templat_indikator(self, format: str) -> tuple[bytes, str, str]:
+        """Templat impor indikator eksternal: (isi, tipe media, nama berkas)."""
+        daftar_prodi = await referensi.daftar_prodi(self.session)
+        kolom = [
+            KolomImpor(
+                "prodi_kode",
+                True,
+                "kode prodi",
+                "Kode prodi (lihat lembar 'referensi'). Satu baris per prodi per indikator.",
+                daftar_prodi[0].kode if daftar_prodi else "KODE-PRODI",
+            ),
+            KolomImpor(
+                "kode",
+                True,
+                "teks",
+                "Kode indikator tanpa spasi, minimal 2 karakter. Kode yang sama pada prodi dan dokumen yang sama memperbarui nilai lama.",
+                "masa_tunggu_bulan",
+            ),
+            KolomImpor("nama", True, "teks", "Nama indikator yang tampil di aplikasi, minimal 2 karakter.", "Masa tunggu kerja pertama"),
+            KolomImpor("nilai", False, "angka (desimal pakai titik)", "Kosongkan bila angkanya memang tidak tersedia.", 3.5),
+            KolomImpor("satuan", False, "teks", "Mis. bulan, persen, skor.", "bulan"),
+            KolomImpor(
+                "jumlah_responden",
+                False,
+                "bilangan bulat",
+                "Bila kurang dari 30, indikator ditampilkan sebagai 'data tidak memadai'. ≥ 0.",
+                120,
+            ),
+            KolomImpor("catatan", False, "teks", "Sumber atau keterangan tambahan.", "Tracer study 2024"),
+        ]
+        if format == "csv":
+            return buat_csv(kolom), TIPE_CSV, "templat-impor-indikator.csv"
+        isi = buat_xlsx(
+            "Indikator dokumen eksternal",
+            kolom,
+            referensi={
+                "prodi": (
+                    ["kode (isi di kolom prodi_kode)", "nama", "jenjang", "LAM"],
+                    [[p.kode, p.nama, p.jenjang, p.lam_kode] for p in daftar_prodi],
+                )
+            },
+        )
+        return isi, TIPE_XLSX, "templat-impor-indikator.xlsx"
 
     async def impor_indikator(self, pemanggil: Pemanggil, dokumen_id: UUID, nama: str, isi: bytes, atomik: bool) -> dict[str, Any]:
         """Kolom: prodi_kode, kode, nama, nilai, satuan, jumlah_responden, catatan. Baris bermasalah dilaporkan

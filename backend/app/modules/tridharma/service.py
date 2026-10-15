@@ -28,6 +28,7 @@ from app.core.exceptions import (
 from app.core.pagination import ParamHalaman, halaman
 from app.core.permissions import SF, K, Pemanggil
 from app.core.unit_of_work import UnitOfWork
+from app.infrastructure.documents.templat_impor import TIPE_CSV, TIPE_XLSX, buat_csv, buat_xlsx
 from app.modules.bukti import public as bukti
 from app.modules.instrumen import public as instrumen
 from app.modules.instrumen.public import JenisEntitas
@@ -35,6 +36,7 @@ from app.modules.laporan import public as laporan
 from app.modules.referensi import public as referensi
 from app.modules.tridharma import models as m
 from app.modules.tridharma.registry import Spec
+from app.modules.tridharma.templat import kolom_impor
 
 KOLOM_INTERNAL = {"deleted_at"}
 
@@ -465,12 +467,20 @@ class LayananDataInti:
             {judul[i]: r[i] for i in range(min(len(judul), len(r))) if judul[i]} for r in baris[1:] if any(c not in (None, "") for c in r)
         ]
 
-    def _siapkan_baris(self, baris: dict[str, Any], prodi_kode: dict[str, UUID]) -> dict[str, Any]:
+    def _siapkan_baris(
+        self, baris: dict[str, Any], prodi_kode: dict[str, UUID], tahun_kode: dict[str, UUID] | None = None
+    ) -> dict[str, Any]:
         hasil: dict[str, Any] = {}
         for k, v in baris.items():
             if isinstance(v, str):
                 v = v.strip()
             if v in ("", None):
+                continue
+            if k == "tahun_akademik":  # kode yang mudah dibaca (mis. 2024/2025-Ganjil) → UUID
+                tid = (tahun_kode or {}).get(str(v).strip().upper())
+                if tid is None:
+                    raise ValueError(f"Tahun akademik tidak dikenal: {v} (lihat lembar 'referensi' pada templat).")
+                hasil["tahun_akademik_id"] = tid
                 continue
             if k == "prodi_kode":
                 ids = [prodi_kode[x.strip().upper()] for x in str(v).split(",") if x.strip().upper() in prodi_kode]
@@ -489,15 +499,45 @@ class LayananDataInti:
             hasil[k] = v
         return hasil
 
+    async def templat_impor(self, format: str) -> tuple[bytes, str, str]:
+        """Templat impor untuk sumber ini: (isi, tipe media, nama berkas)."""
+        daftar_prodi = await referensi.daftar_prodi(self.session)
+        daftar_tahun = await referensi.daftar_tahun_akademik(self.session)
+        aktif = next((t for t in daftar_tahun if t.is_aktif), daftar_tahun[0] if daftar_tahun else None)
+        kolom = kolom_impor(
+            self.spec,
+            kode_prodi=daftar_prodi[0].kode if daftar_prodi else "KODE-PRODI",
+            kode_tahun=aktif.kode if aktif else "2025/2026",
+        )
+        dasar = f"templat-impor-{self.spec.path}"
+        if format == "csv":
+            return buat_csv(kolom), TIPE_CSV, f"{dasar}.csv"
+        referensi_lembar = {
+            "prodi": (
+                ["kode (isi di kolom prodi_kode)", "nama", "jenjang", "LAM"],
+                [[p.kode, p.nama, p.jenjang, p.lam_kode] for p in daftar_prodi],
+            ),
+            "tahun_akademik": (
+                ["kode (isi di kolom tahun_akademik)", "mulai", "selesai", "aktif"],
+                [[t.kode, t.tanggal_mulai.isoformat(), t.tanggal_selesai.isoformat(), "ya" if t.is_aktif else ""] for t in daftar_tahun],
+            ),
+        }
+        return (
+            buat_xlsx(self.spec.nama, kolom, catatan=list(self.spec.catatan_impor), referensi=referensi_lembar),
+            TIPE_XLSX,
+            f"{dasar}.xlsx",
+        )
+
     async def impor(self, pemanggil: Pemanggil, nama: str, isi: bytes, *, atomik: bool = False) -> dict[str, Any]:
         baris_mentah = self._baca_berkas(nama, isi)
         if len(baris_mentah) > 2000:
             raise ValidasiGagal("Maksimal 2000 baris per impor.")
         prodi_kode = {p.kode.upper(): p.id for p in await referensi.daftar_prodi(self.session)}
+        tahun_kode = {t.kode.strip().upper(): t.id for t in await referensi.daftar_tahun_akademik(self.session)}
         berhasil, gagal = 0, []
         for no, mentah in enumerate(baris_mentah, start=2):  # baris 1 = judul
             try:
-                skema = self.spec.skema.model_validate(self._siapkan_baris(mentah, prodi_kode))
+                skema = self.spec.skema.model_validate(self._siapkan_baris(mentah, prodi_kode, tahun_kode))
                 async with self.session.begin_nested():
                     await self._buat_tanpa_komit(pemanggil, skema)
                 berhasil += 1

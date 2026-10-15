@@ -4,7 +4,7 @@ import type { Halaman, Rec } from "@/shared/api/types";
 import { useAuth } from "@/shared/auth/AuthProvider";
 import { useAksi, useApi } from "@/shared/lib/hooks";
 import { angka, tanggal } from "@/shared/lib/format";
-import { Alert, Button, Empty, ErrorBox, Field, Icon, Modal, Muat, PageHead, Pager, Pill, StatusPill, Tabel, type Kolom } from "@/shared/ui";
+import { Alert, Button, Empty, ErrorBox, Field, Icon, Modal, Muat, PageHead, Pager, Pill, StatusPill, Tabel, TombolTemplat, type Kolom } from "@/shared/ui";
 import { PilihBuktiModal } from "../bukti/BuktiPage";
 
 const JENIS = [
@@ -110,6 +110,7 @@ function IndikatorModal({ dokumen, onTutup }: { dokumen: Rec; onTutup: () => voi
           <hr className="divider" />
           <strong>Atau impor CSV/XLSX</strong>
           <div className="muted" style={{ fontSize: "0.82rem" }}>Kolom: <span className="mono">prodi_kode, kode, nama, nilai, satuan, jumlah_responden, catatan</span></div>
+          <TombolTemplat path="/dokumen-eksternal/indikator/impor/templat" namaDasar="templat-impor-indikator" />
           <div className="row"><input type="file" accept=".csv,.xlsx" onChange={(e) => setBerkas(e.target.files?.[0] ?? null)} /><Button size="sm" disabled={!berkas || impor.isPending} onClick={() => impor.mutate()}>Impor</Button></div>
           {impor.data && (
             <Alert jenis={impor.data.baris_gagal.length ? "warn" : "ok"} judul={`${impor.data.baris_berhasil} baris berhasil`}>

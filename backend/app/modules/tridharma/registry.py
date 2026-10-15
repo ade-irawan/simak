@@ -32,6 +32,8 @@ class Spec:
     #: Staf Fakultas boleh menulis ke prodi mana pun (data bersama / tingkat UPPS), bukan hanya prodi yang ditugaskan
     sf_bebas: bool = False
     nama: str = ""
+    #: catatan tambahan pada lembar petunjuk templat impor
+    catatan_impor: tuple[str, ...] = ()
 
 
 SPEC_LIST: tuple[Spec, ...] = (
@@ -46,6 +48,7 @@ SPEC_LIST: tuple[Spec, ...] = (
         filter_boleh=("status_kepegawaian", "jabatan_akademik", "is_aktif", "pendidikan_tertinggi"),
         sf_bebas=True,
         nama="Dosen",
+        catatan_impor=("Afiliasi prodi dosen tidak diimpor; atur dari formulir dosen setelah impor.",),
     ),
     Spec(
         "statistik-mahasiswa",

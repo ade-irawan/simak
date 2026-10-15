@@ -73,7 +73,7 @@ export const SUMBER_DATA: Record<string, SumberCfg> = {
   },
   "statistik-mahasiswa": {
     path: "statistik-mahasiswa", judul: "Statistik mahasiswa", sub: "Daya tampung, pendaftar, mahasiswa baru, dan mahasiswa aktif per prodi per tahun.", tahun: true, pengikat: "langsung",
-    kolomImpor: "prodi_kode, tahun_akademik_id, daya_tampung, pendaftar, lulus_seleksi, maba_reguler, maba_transfer, aktif_reguler, aktif_transfer, mahasiswa_asing",
+    kolomImpor: "prodi_kode, tahun_akademik, daya_tampung, pendaftar, lulus_seleksi, maba_reguler, maba_transfer, aktif_reguler, aktif_transfer, mahasiswa_asing",
     awal: (o) => ({ ...awalTahun(o) }),
     def: (o, s) => [prodiField(o, s), tahunField(o), angkaField("daya_tampung", "Daya tampung", { min: 0 }), angkaField("pendaftar", "Pendaftar", { min: 0 }), angkaField("lulus_seleksi", "Lulus seleksi", { min: 0 }),
       angkaField("maba_reguler", "Mahasiswa baru reguler", { min: 0 }), angkaField("maba_transfer", "Mahasiswa baru transfer", { min: 0 }), angkaField("aktif_reguler", "Aktif reguler", { min: 0 }),
@@ -86,7 +86,7 @@ export const SUMBER_DATA: Record<string, SumberCfg> = {
   },
   "statistik-lulusan": {
     path: "statistik-lulusan", judul: "Statistik lulusan", sub: "Jumlah lulusan, IPK, masa studi, dan kelulusan tepat waktu per tahun lulus.", tahun: true, pengikat: "langsung",
-    kolomImpor: "prodi_kode, tahun_akademik_id, jumlah_lulusan, ipk_min, ipk_rata, ipk_maks, masa_studi_rata_tahun, lulus_tepat_waktu",
+    kolomImpor: "prodi_kode, tahun_akademik, jumlah_lulusan, ipk_min, ipk_rata, ipk_maks, masa_studi_rata_tahun, lulus_tepat_waktu",
     awal: (o) => ({ ...awalTahun(o) }),
     def: (o, s) => [prodiField(o, s), tahunField(o, "tahun_akademik_id", "Tahun lulus"), angkaField("jumlah_lulusan", "Jumlah lulusan", { min: 0 }), angkaField("lulus_tepat_waktu", "Lulus tepat waktu", { min: 0 }),
       angkaField("ipk_min", "IPK minimum", { min: 0, max: 4 }), angkaField("ipk_rata", "IPK rata-rata", { min: 0, max: 4 }), angkaField("ipk_maks", "IPK maksimum", { min: 0, max: 4 }), angkaField("masa_studi_rata_tahun", "Masa studi rata-rata (tahun)", { min: 0 })],
@@ -105,7 +105,7 @@ export const SUMBER_DATA: Record<string, SumberCfg> = {
   },
   penelitian: {
     path: "penelitian", judul: "Penelitian", sub: "Penelitian dosen, hibah, dan pendanaannya. Satu penelitian dapat diatribusikan ke beberapa prodi.", tahun: true, pengikat: "penghubung", bersarang: ["dosen", "atribusi_prodi"],
-    kolomImpor: "prodi_kode, judul, tahun_akademik_id, sumber_dana, jumlah_dana, jumlah_mahasiswa, nama_pemberi_dana, nomor_kontrak",
+    kolomImpor: "prodi_kode, judul, tahun_akademik, sumber_dana, jumlah_dana, jumlah_mahasiswa, nama_pemberi_dana, nomor_kontrak",
     awal: (o) => ({ ...awalTahun(o), sumber_dana: "pt_mandiri", jumlah_dana: 0, jumlah_mahasiswa: 0, dosen: [], atribusi_prodi: [] }),
     def: (o) => kegiatanDef(o),
     kolom: kolomKegiatan(),
@@ -113,7 +113,7 @@ export const SUMBER_DATA: Record<string, SumberCfg> = {
   },
   pkm: {
     path: "pkm", judul: "Pengabdian kepada masyarakat", sub: "Kegiatan PkM, hibah, dan pendanaannya.", tahun: true, pengikat: "penghubung", bersarang: ["dosen", "atribusi_prodi"],
-    kolomImpor: "prodi_kode, judul, tahun_akademik_id, sumber_dana, jumlah_dana, jumlah_mahasiswa, nama_pemberi_dana, nomor_kontrak",
+    kolomImpor: "prodi_kode, judul, tahun_akademik, sumber_dana, jumlah_dana, jumlah_mahasiswa, nama_pemberi_dana, nomor_kontrak",
     awal: (o) => ({ ...awalTahun(o), sumber_dana: "pt_mandiri", jumlah_dana: 0, jumlah_mahasiswa: 0, dosen: [], atribusi_prodi: [] }),
     def: (o) => kegiatanDef(o),
     kolom: kolomKegiatan(),
@@ -121,7 +121,7 @@ export const SUMBER_DATA: Record<string, SumberCfg> = {
   },
   publikasi: {
     path: "publikasi", judul: "Publikasi & luaran", sub: "Jurnal, prosiding, buku, dan HKI. DOI yang sama selalu ditolak; kemiripan judul memunculkan peringatan.", tahun: true, pengikat: "penghubung", bersarang: ["penulis", "atribusi_prodi"],
-    kolomImpor: "prodi_kode, judul, jenis, tingkat, nama_media, tahun_terbit, tahun_akademik_id, doi, url, jumlah_sitasi, jumlah_mahasiswa",
+    kolomImpor: "prodi_kode, judul, jenis, tingkat, nama_media, tahun_terbit, tahun_akademik, doi, url, jumlah_sitasi, jumlah_mahasiswa",
     awal: (o) => ({ ...awalTahun(o), jenis: "jurnal", tahun_terbit: new Date().getFullYear(), jumlah_sitasi: 0, jumlah_mahasiswa: 0, penulis: [], atribusi_prodi: [] }),
     def: (o) => [
       { nama: "judul", label: "Judul", wajib: true, span2: true },
@@ -175,7 +175,7 @@ export const SUMBER_DATA: Record<string, SumberCfg> = {
   },
   keuangan: {
     path: "keuangan", judul: "Keuangan", sub: "Perolehan dan penggunaan dana per tahun. Baris tanpa prodi adalah tingkat UPPS (Staf Fakultas).", tahun: true, pengikat: "langsung",
-    kolomImpor: "prodi_kode, tahun_akademik_id, arah, kategori, jumlah",
+    kolomImpor: "prodi_kode, tahun_akademik, arah, kategori, jumlah",
     awal: (o) => ({ ...awalTahun(o), arah: "penggunaan" }),
     def: (o, s) => [{ ...prodiField(o, s, false), bantuan: s.fakultas ? "Kosongkan untuk tingkat UPPS/fakultas." : "Terkunci pada prodi Anda." }, tahunField(o),
       { nama: "arah", label: "Arah", jenis: "pilihan", wajib: true, pilihan: [{ nilai: "perolehan", label: "Perolehan" }, { nilai: "penggunaan", label: "Penggunaan" }] },

@@ -115,3 +115,16 @@ export async function putToStorage(url_: string, file: File, mime: string): Prom
   const res = await fetch(url_, { method: "PUT", body: file, headers: { "Content-Type": mime } });
   if (!res.ok) throw new ApiError(res.status, "UNGGAH_GAGAL", "Berkas gagal diunggah ke penyimpanan.");
 }
+
+/** Mengunduh berkas dari API (butuh token, jadi tidak cukup dengan tautan biasa) lalu menyimpannya di peramban. */
+export async function unduhBerkas(path: string, namaBerkas: string, query?: Query, retry = true): Promise<void> {
+  const res = await fetch(url(path, query), { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}, credentials: "same-origin" });
+  if (res.status === 401 && retry && (await refreshSession())) return unduhBerkas(path, namaBerkas, query, false);
+  if (!res.ok) throw await parseError(res);
+  const objek = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a");
+  a.href = objek;
+  a.download = namaBerkas;
+  a.click();
+  URL.revokeObjectURL(objek);
+}

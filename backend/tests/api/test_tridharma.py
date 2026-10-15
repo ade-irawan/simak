@@ -270,3 +270,35 @@ async def test_lampirkan_bukti_ke_data_inti_dan_peringatan_dampak_ec05(dunia, ta
     assert (await dunia.get("k_kimia", f"/publikasi/{obj['id']}/bukti")).json() == []
     # daftar butir yang merujuk jenis data ini (kosong bila belum ada instrumen aktif dengan aturan terkait)
     assert (await dunia.get("k_kimia", f"/publikasi/{obj['id']}/butir")).status_code == 200
+
+
+async def test_templat_impor_dapat_diunduh_diisi_dan_diimpor(dunia, ta):
+    from openpyxl import load_workbook
+
+    # hanya peran pengimpor yang dapat mengunduh templat
+    assert (await dunia.get("k_kimia", "/keuangan/impor/templat")).status_code == 403
+    r = await dunia.get("sp_kimia", "/keuangan/impor/templat")
+    assert r.status_code == 200 and "templat-impor-keuangan.xlsx" in r.headers["content-disposition"]
+    wb = load_workbook(io.BytesIO(r.content))
+    assert wb.sheetnames == ["data", "petunjuk", "contoh", "prodi", "tahun_akademik"]  # 'data' harus lembar pertama
+    assert [c.value for c in wb["data"][1]] == ["prodi_kode", "tahun_akademik", "arah", "kategori", "jumlah"]
+    assert [c.value for c in wb["data"][2]] == [None] * 5  # templat kosong; contoh ada di lembar terpisah
+    kode_ta = [row[0].value for row in wb["tahun_akademik"].iter_rows(min_row=2)]
+    assert "2025/2026" in kode_ta
+    # isi templat memakai kode yang terbaca manusia, lalu impor
+    wb["data"].append(["KIMIA", "2025/2026", "perolehan", "hibah", 5000000])
+    buf = io.BytesIO()
+    wb.save(buf)
+    r = await dunia.post("sp_kimia", "/keuangan/impor", files={"berkas": ("keu.xlsx", buf.getvalue(), "application/octet-stream")})
+    assert r.json()["baris_berhasil"] == 1 and not r.json()["baris_gagal"]
+    # kode tahun akademik yang salah dilaporkan dengan jelas
+    csv = b"prodi_kode,tahun_akademik,arah,kategori,jumlah\nKIMIA,1999/2000,perolehan,x1,5\n"
+    r = await dunia.post("sp_kimia", "/keuangan/impor", files={"berkas": ("k.csv", csv, "text/csv")})
+    assert "Tahun akademik tidak dikenal" in r.json()["baris_gagal"][0]["pesan"]
+    # CSV: hanya baris judul
+    r = await dunia.get("sp_kimia", "/keuangan/impor/templat?format=csv")
+    assert r.content.decode("utf-8-sig").strip() == "prodi_kode,tahun_akademik,arah,kategori,jumlah"
+    # templat indikator dokumen eksternal (Staf Fakultas)
+    assert (await dunia.get("sp_kimia", "/dokumen-eksternal/indikator/impor/templat")).status_code == 403
+    r = await dunia.get("sf", "/dokumen-eksternal/indikator/impor/templat")
+    assert r.status_code == 200 and load_workbook(io.BytesIO(r.content))["data"][1][0].value == "prodi_kode"

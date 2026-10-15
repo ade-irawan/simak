@@ -3,7 +3,7 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, File, Query, Request, UploadFile
+from fastapi import APIRouter, Body, Depends, File, Query, Request, Response, UploadFile
 from pydantic import BaseModel, create_model
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,6 +68,15 @@ def daftarkan(spec: Spec) -> None:
         svc: LayananDataInti = Depends(layanan),
     ):
         return await svc.buat(pemanggil, data, abaikan_kemiripan=abaikan_kemiripan)
+
+    @router.get(f"{prefix}/impor/templat", tags=tag, name=f"templat_impor_{spec.path}")
+    async def templat_impor(
+        format: str = Query("xlsx", pattern="^(xlsx|csv)$"),
+        pemanggil: Pemanggil = Depends(impor_peran),
+        svc: LayananDataInti = Depends(layanan),
+    ):
+        isi, tipe, nama_berkas = await svc.templat_impor(format)
+        return Response(isi, media_type=tipe, headers={"Content-Disposition": f'attachment; filename="{nama_berkas}"'})
 
     @router.post(f"{prefix}/impor", tags=tag, status_code=202, name=f"impor_{spec.path}")
     async def impor(

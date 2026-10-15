@@ -6,4 +6,5 @@ export * from "./Form";
 export * from "./Icon";
 export * from "./Modal";
 export * from "./Toast";
+export * from "./TombolTemplat";
 export * from "./TombolTema";
